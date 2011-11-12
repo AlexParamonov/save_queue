@@ -1,6 +1,6 @@
 Save Queue
 ==========
-allows to push related objects to an object's queue for delayed save, that will triggered on object.save. In this case object wil store all related information on its save.
+Save Queue allows to push related objects to an object's queue for delayed save, that will triggered on object#save. In this case object wil store all related information on its save.
 
 Installation
 ------------

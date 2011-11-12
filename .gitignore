@@ -1,4 +1,7 @@
+*.gem
 .bundle
+Gemfile.lock
+pkg/*
 .idea/
 doc/
 log/*.log
