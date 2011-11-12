@@ -1,0 +1,10 @@
+.bundle
+.idea/
+doc/
+log/*.log
+/tmp/
+tmp/
+db/*.sqlite3
+/coverage
+/coverage.data
+/.yardoc
