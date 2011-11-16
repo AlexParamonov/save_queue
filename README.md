@@ -11,11 +11,11 @@ Usage
 
 How to start:
 
-1. include SavedQueue:
+1. include SaveQueue:
 
-        require 'saved_queue'
+        require 'save_queue'
         class Artice
-          include SavedQueue
+          include SaveQueue
         end
 
 2. call \#mark_as_saved method when object gets dirty:
@@ -45,11 +45,11 @@ How to start:
           end
         end
 
-5. add SavedQueue to some other classes:
+5. add SaveQueue to some other classes:
 
-        require 'saved_queue'
+        require 'save_queue'
         class Tag
-          include SavedQueue
+          include SaveQueue
         end
 
         class Artice
