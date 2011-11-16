@@ -250,6 +250,43 @@ describe "SaveQueue usage" do
       object.save_queue.should_not be_kind_of other
       object.save_queue.should be_a SaveQueue::Queue
     end
+
+    describe "inheritance" do
+      it "should inherit settings of parent class" do
+        klass = Class.new
+        klass.send :include, SaveQueue
+
+        klass.queue_class.should == SaveQueue::Queue
+
+        child = Class.new(klass)
+        child.queue_class.should == SaveQueue::Queue
+      end
+
+      it "should not override settings of parent class" do
+        klass = Class.new
+        klass.send :include, SaveQueue
+        klass.queue_class.should == SaveQueue::Queue
+
+        child = Class.new(klass)
+        child.queue_class = Integer
+        child.queue_class.should == Integer
+
+        klass.queue_class.should == SaveQueue::Queue
+      end
+
+
+      it "include SaveQueue should not override settings of parent class" do
+        klass = Class.new
+        klass.send :include, SaveQueue
+        klass.queue_class = Integer
+
+        klass.queue_class.should == Integer
+
+        child = Class.new(klass)
+        child.send :include, SaveQueue
+        child.queue_class.should == Integer
+      end
+    end
   end
 
   private

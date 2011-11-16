@@ -116,7 +116,8 @@ Note: Today Save Queue use only #save method to perform save actions on an objec
 
 Requirements
 ------------
-none, rspec2 for testing
+ActiveSupport
+rspec2 for testing
 
 Compatibility
 -------------

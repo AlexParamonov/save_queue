@@ -1,15 +1,17 @@
 require "save_queue/queue"
+require 'active_support/core_ext/class/inheritable_attributes'
 
 module SaveQueue
   module Object
     #class_inheritable_accessor :queue_class
     def self.included base
       base.class_eval do
-        class<<self
-          attr_accessor :queue_class
-        end
+        class_inheritable_accessor :queue_class
+        #class<<self
+        #  attr_accessor :queue_class
+        #end
 
-        self.queue_class = Queue
+        self.queue_class ||= Queue
       end
     end
 
