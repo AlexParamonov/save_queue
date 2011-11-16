@@ -31,9 +31,10 @@ module SaveQueue
 
 
     def initialize(*args)
-      super if defined?(super)
       queue = self.class.queue_class.new
       instance_variable_set "@_save_queue", queue
+
+      super if defined?(super)
 
       # this will make RunAlwaysFirst methods triggered first in inheritance tree
       extend RunAlwaysFirst
