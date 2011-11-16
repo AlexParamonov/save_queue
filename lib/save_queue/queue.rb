@@ -30,12 +30,6 @@ module SaveQueue
 
       true
     end
-
-    def valid?
-      @queue.all? do |object|
-        object.valid?
-      end
-    end
   end
 
   class FailedSaveError < RuntimeError

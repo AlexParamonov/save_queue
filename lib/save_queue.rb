@@ -5,6 +5,4 @@ module SaveQueue
   def self.included base
     base.send :include, SaveQueue::Object
   end
-
-
 end

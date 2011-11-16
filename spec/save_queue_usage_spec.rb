@@ -1,9 +1,4 @@
-require "save_queue"
-module Tests
-  class Object
-    include SaveQueue
-  end
-end
+require "spec_helper"
 
 # TODO split by Object and Queue
 describe "SaveQueue usage" do
@@ -28,7 +23,10 @@ describe "SaveQueue usage" do
     end
 
     it "should return false for new object" do
-      Tests::Object.new.should_not have_unsaved_changes
+      klass = Class.new
+      klass.send :include, SaveQueue
+
+      klass.new.should_not have_unsaved_changes
     end
   end
 
@@ -58,7 +56,7 @@ describe "SaveQueue usage" do
     end
   end
 
-  describe "add_all" do
+  describe "#add_all" do
     it "should delegate to #add" do
       @base.save_queue.should_receive(:add).exactly(3).times
       @base.save_queue.add_all [1,2,3]
@@ -151,38 +149,6 @@ describe "SaveQueue usage" do
       @base.save.should be_true
     end
 
-    context "invalid caller" do
-      it "should not save queue" do
-        @base.save_queue.add @related_object
-
-        @base.stub(:valid?).and_return(false)
-
-        @related_object.should_not_receive(:save)
-        @base.save.should be_false
-
-        #@base.stub(:valid?).and_return(true)
-        #@related_object.should_receive(:save).once.and_return(true)
-        #@base.save.should be_true
-      end
-    end
-
-    describe "invalid object in queue" do
-      it "should not save queue and caller" do
-        invalid = new_mock_object :invalid
-        invalid.stub(:valid?).and_return(false)
-
-        valid = new_mock_object :valid
-        valid.stub(:valid?).and_return(true)
-
-        @base.save_queue.add invalid
-        @base.save_queue.add valid
-
-        invalid.should_not_receive(:save)
-        valid.should_not_receive(:save)
-        @base.save.should be_false
-      end
-    end
-
     describe "multiple callers" do
       before(:each) do
         @base2 = new_object
@@ -269,11 +235,27 @@ describe "SaveQueue usage" do
     end
   end
 
+  describe "queue changes" do
+    it "should be able to change queue class before initialization" do
+      klass = Class.new
+      klass.send :include, SaveQueue
+      object = klass.new
+      object.save_queue.should be_a SaveQueue::Queue
+
+      other = Class.new(SaveQueue::Queue)
+      klass.queue_class = other
+      klass.new.save_queue.should be_kind_of other
+
+      object.class.queue_class = other
+      object.save_queue.should_not be_kind_of other
+      object.save_queue.should be_a SaveQueue::Queue
+    end
+  end
+
   private
   def new_mock_object name
     bad_object = mock name
     bad_object.stub_chain(:class, :include?).with(SaveQueue::Object).and_return(true)
-    bad_object.stub(:valid?).and_return(true)
     bad_object.stub(:save).and_return(true)
     bad_object.stub(:has_unsaved_changes?).and_return(true)
 
@@ -281,12 +263,12 @@ describe "SaveQueue usage" do
   end
 
   def new_object
-    object = Tests::Object.new
-    object.stub(:valid?).and_return(true)
+    klass = Class.new
+    klass.send :include, SaveQueue
+
+    object = klass.new
     object.mark_as_changed
 
     object
   end
-
-
 end

@@ -2,13 +2,20 @@ require "save_queue/queue"
 
 module SaveQueue
   module Object
+    #class_inheritable_accessor :queue_class
+    def self.included base
+      base.class_eval do
+        class<<self
+          attr_accessor :queue_class
+        end
+
+        self.queue_class = Queue
+      end
+    end
 
     module RunAlwaysFirst
       # @return [Boolean]
       def save(*args)
-        # are objects in queue valid?
-        return false unless valid?
-        return false unless save_queue.valid?
         #return false if defined?(super) and false == super
 
         super_saved = true
@@ -23,7 +30,7 @@ module SaveQueue
 
     def initialize(*args)
       super if defined?(super)
-      queue = Queue.new
+      queue = self.class.queue_class.new
       instance_variable_set "@_save_queue", queue
 
       # this will make RunAlwaysFirst methods triggered first in inheritance tree
