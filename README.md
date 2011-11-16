@@ -36,9 +36,11 @@ How to start:
           end
         end
 
-4.  Save Queue forced you to use valid? method, this should be changes in future and extracted to a module:
+4.  If you want to use validation, include SaveQueue::Plugins::Validation and implement #valid? method. You may got failed objects by save_queue.objects_with_errors
 
         class Artice
+          include SaveQueue::Plugins::Validation
+
           # @return [boolean]
           def valid?
             true
@@ -78,6 +80,8 @@ How to start:
 
 7. Handle errors
 
+  7.1. You did not include SaveQueue::Plugins::Validation:
+
         begin
           article.save
         rescue SaveQueue::FailedSaveError => save_error
@@ -87,6 +91,13 @@ How to start:
           # @option info [Object]        :failed
           # @option info [Array<Object>] :pending
           save_error.context
+        end
+
+  7.2. You've included SaveQueue::Plugins::Validation:
+
+        # Note nothing was actually saved. You dont need to do a cleanup
+        unless article.save then
+          failed_objects = article.saved_query.objects_with_errors
         end
 
 
@@ -102,9 +113,6 @@ method \#mark_as_saved becomes useless in this case and you should mark objects 
 
 
 Note: Today Save Queue use only #save method to perform save actions on an objects, but later this should be changed to custom option.
-
-Note: Save Queue forced you to use valid? method, this should be changes in future and extracted to a module
-
 
 Requirements
 ------------
