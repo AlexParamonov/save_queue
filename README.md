@@ -18,12 +18,12 @@ How to start:
           include SaveQueue
         end
 
-2. call \#mark_as_saved method when object gets dirty:
+2. call \#mark_as_changed method when object gets dirty:
 
         class Artice
           def change_attribute attr, value
             @attributes[attr] = value
-            mark_as_saved # call this and object will be marked for save
+            mark_as_changed # call this and object will be marked for save
           end
         end
 
@@ -116,8 +116,9 @@ Note: Today Save Queue use only #save method to perform save actions on an objec
 
 Requirements
 ------------
-ActiveSupport
-rspec2 for testing
+
+* ActiveSupport
+* rspec2 for testing
 
 Compatibility
 -------------
