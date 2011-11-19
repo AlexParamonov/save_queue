@@ -53,7 +53,6 @@ module SaveQueue
       instance_variable_get "@_save_queue"
     end
 
-    private
     def mark_as_saved
       instance_variable_set "@_changed_mark", false
     end
