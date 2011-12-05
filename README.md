@@ -133,6 +133,10 @@ tested with Ruby
 
 see [build history](http://travis-ci.org/#!/AlexParamonov/save_queue/builds)
 
+Contributing
+-------------
+see [contributing guide](http://github.com/AlexParamonov/save_queue/blob/master/CONTRIBUTING.md)
+
 Copyright
 ---------
 Copyright © 2011 Alexander N Paramonov.
