@@ -1,34 +1,56 @@
-require "save_queue/queue"
 require 'active_support/core_ext/class/inheritable_attributes'
+require 'save_queue/object_queue'
 
 module SaveQueue
   module Object
     #class_inheritable_accessor :queue_class
     def self.included base
       base.class_eval do
-        class_inheritable_accessor :queue_class
-        #class<<self
-        #  attr_accessor :queue_class
-        #end
+        #class_inheritable_accessor :queue_class
 
-        self.queue_class ||= Queue
+        class<<self
+          attr_accessor :queue_class
+        end
+
+        def self.inherited base
+          base.queue_class = self.queue_class
+        end
+
+        self.queue_class ||= ObjectQueue
       end
     end
+
 
     module RunAlwaysFirst
       # @return [Boolean]
+      #def save(*args)
+      #  #return false if defined?(super) and false == super
+      #
+      #  super_saved = super if defined?(super)
+      #  # object is saved here
+      #  mark_as_saved
+      #
+      #  save_queue.save ? (super_saved || true) : false
+      #end
+
+      # can not reilly on save! here, because client may not define it at all
       def save(*args)
-        #return false if defined?(super) and false == super
-
-        super_saved = true
+        super_saved = nil
         super_saved = super if defined?(super)
-        # object is saved here
         mark_as_saved
-        return (super_saved and save_queue.save)
+        if save_queue.save
+          super_saved.nil? ? true : super_saved
+        else
+          false
+        end
+      end
 
+      def save!
+        super if defined?(super)
+        mark_as_saved
+        save_queue.save!
       end
     end
-
 
     def initialize(*args)
       queue = self.class.queue_class.new

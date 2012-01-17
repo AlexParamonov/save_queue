@@ -50,26 +50,51 @@ describe SaveQueue::ObjectQueue do
       queue.save
     end
 
-    it "should raise SaveQueue::FailedSaveError if at least one object in queue was not saved" do
-      objects ={}
-      objects[:valid1]               = new_element(:valid1)
-      objects[:valid2]               = new_element(:valid2)
-      objects[:not_changed]          = new_element(:not_changed,         :changed => false, :saved => true)
-      objects[:unsaved_but_changed]  = new_element(:unsaved_but_changed, :changed => true,  :saved => false)
-      objects[:saved]                = new_element(:saved,               :changed => true,  :saved => true)
-      objects[:valid3]               = new_element(:valid3)
+    it "should save an object if it had changed state" do
+      element = new_element(:element, :changed => false, :saved => true)
 
-      objects.each_value do |object|
-        queue << object
+      queue << element
+      
+      element.stub(:has_unsaved_changes?).and_return(true)
+
+      element.should_receive(:save).once.and_return(true)
+      queue.save
+    end
+
+    describe "failed save" do
+      before(:each) do
+        @objects ={}
+        @objects[:valid1]               = new_element(:valid1)
+        @objects[:valid2]               = new_element(:valid2)
+        @objects[:not_changed]          = new_element(:not_changed,         :changed => false, :saved => true)
+        @objects[:unsaved_but_changed]  = new_element(:unsaved_but_changed, :changed => true,  :saved => false)
+        @objects[:saved]                = new_element(:saved,               :changed => true,  :saved => true)
+        @objects[:valid3]               = new_element(:valid3)
+
+        @objects.each_value do |object|
+          queue << object
+        end
+      end
+      
+      it "should raise SaveQueue::FailedSaveError if at least one object in queue was not saved" do
+        expect{  queue.save! }.to raise_error(SaveQueue::FailedSaveError) {|error| \
+          error.context.should == { :processed  => @objects.values_at(:valid1, :valid2, :not_changed),
+                                    :saved      => @objects.values_at(:valid1, :valid2),
+                                    :failed     => @objects[:unsaved_but_changed],
+                                    :pending    => @objects.values_at(:not_changed, :saved, :valid3) }
+        }
       end
 
+      it "should not raise SaveQueue::FailedSaveError and provide errors array" do
+        expect{  queue.save }.to_not raise_error(SaveQueue::FailedSaveError)
+        queue.save.should be_false
 
-      expect{  queue.save }.to raise_error(SaveQueue::FailedSaveError) {|error| \
-        error.context.should == { :processed  => objects.values_at(:valid1, :valid2, :not_changed),
-                                  :saved      => objects.values_at(:valid1, :valid2),
-                                  :failed     => objects[:unsaved_but_changed],
-                                  :pending    => objects.values_at(:not_changed, :saved, :valid3) }
-      }
+        queue.errors.should include ({:processed  => @objects.values_at(:valid1, :valid2, :not_changed),
+                                      :saved      => @objects.values_at(:valid1, :valid2),
+                                      :failed     => @objects[:unsaved_but_changed],
+                                      :pending    => @objects.values_at(:not_changed, :saved, :valid3) })
+      end
     end
+
   end
 end

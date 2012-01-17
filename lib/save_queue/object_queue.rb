@@ -3,6 +3,12 @@ require 'save_queue/uniq_queue'
 
 module SaveQueue
   class ObjectQueue < UniqQueue
+    attr_reader :errors
+    def initialize(*args)
+      super
+      @errors = []
+    end
+
     def add object
       check_requirements_for object
       super object
@@ -16,7 +22,10 @@ module SaveQueue
         if object.has_unsaved_changes?
 
           result = object.save
-          raise FailedSaveError, {:processed => processed, :saved => saved, :failed => object, :pending => @queue - (saved + [object])} if false == result
+          if false == result
+            @errors.push FailedSaveError, {:processed => processed, :saved => saved, :failed => object, :pending => @queue - (saved + [object])}
+            return false
+          end
 
           saved << object
         end
@@ -26,6 +35,12 @@ module SaveQueue
       @queue.clear
 
       true
+    end
+
+    def save!
+      if false == save
+        raise FailedSaveError, errors.last
+      end
     end
 
 
