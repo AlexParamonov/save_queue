@@ -64,16 +64,12 @@ describe SaveQueue::ObjectQueue do
     context "at least one object in queue was not saved" do
       before(:each) do
         @objects ={}
-        @objects[:valid1]               = new_element(:valid1)
-        @objects[:valid2]               = new_element(:valid2)
-        @objects[:not_changed]          = new_element(:not_changed,         :changed => false, :saved => true)
-        @objects[:unsaved_but_changed]  = new_element(:unsaved_but_changed, :changed => true,  :saved => false)
-        @objects[:saved]                = new_element(:saved,               :changed => true,  :saved => true)
-        @objects[:valid3]               = new_element(:valid3)
-
-        @objects.each_value do |object|
-          queue << object
-        end
+        queue << @objects[:valid1]               = new_element(:valid1)
+        queue << @objects[:valid2]               = new_element(:valid2)
+        queue << @objects[:not_changed]          = new_element(:not_changed,         :changed => false, :saved => true)
+        queue << @objects[:unsaved_but_changed]  = new_element(:unsaved_but_changed, :changed => true,  :saved => false)
+        queue << @objects[:saved]                = new_element(:saved,               :changed => true,  :saved => true)
+        queue << @objects[:valid3]               = new_element(:valid3)
       end
 
       describe "#save!" do
