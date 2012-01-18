@@ -1,12 +1,9 @@
-require 'active_support/core_ext/class/inheritable_attributes'
 require 'save_queue/object_queue'
 
 module SaveQueue
   module Object
-    #class_inheritable_accessor :queue_class
     def self.included base
       base.class_eval do
-        #class_inheritable_accessor :queue_class
 
         class<<self
           attr_accessor :queue_class
@@ -34,17 +31,22 @@ module SaveQueue
       #end
 
       # can not reilly on save! here, because client may not define it at all
+      # TODO FIXME may try to save it twice if added to different objects queues and super returned false.
       def save(*args)
-        super_saved = nil
-        super_saved = super if defined?(super)
+        super_result = true
+        super_result = super if defined?(super)
+
+        return false unless !!super_result
+
         mark_as_saved
         if save_queue.save
-          super_saved.nil? ? true : super_saved
+          true == super_result ? true : super_result
         else
           false
         end
       end
 
+      # Suppose,that save! raise an Exception if failed to save an object
       def save!
         super if defined?(super)
         mark_as_saved

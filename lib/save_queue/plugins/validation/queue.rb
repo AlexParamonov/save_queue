@@ -1,32 +1,31 @@
-require "save_queue/queue"
+require "save_queue/plugins/validation/exceptions"
+
 module SaveQueue
   module Plugins
     module Validation
-      class Queue < ::SaveQueue::Queue
-        attr_reader :objects_with_errors
-
-        def initialize(*args)
-          @objects_with_errors = []
-          super
+      module Queue
+        def self.included base
+          base.before_save :validate! if base.respond_to? :before_save
         end
 
         def valid?
-          @objects_with_errors = []
-          @queue.each do |object|
-            @objects_with_errors << object unless object.valid?
-          end
+          validate
+        end
 
-          @objects_with_errors.empty?
+        def validate
+          @queue.each do |object|
+            unless object.valid?
+              @errors[:validation] ||= []
+              @errors[:validation].push(object)
+            end
+          end
+          
+          @errors.empty?
         end
 
         def validate!
-          raise FailedValidationError, @objects_with_errors unless valid?
-
+          raise FailedValidationError, @errors[:validation] unless valid?
           true
-        end
-
-        def errors
-          @objects_with_errors.map(&:errors).reduce(:+)
         end
       end
     end

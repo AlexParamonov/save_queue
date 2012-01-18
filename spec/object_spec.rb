@@ -58,15 +58,27 @@ describe SaveQueue::Object do
       klass.new.save.should == "saved!"
     end
 
-    it "should return false if object not saved" do
-      klass = Class.new do
-        def save
-          false
+    context "object could not be saved" do
+      let(:object) do
+        klass = Class.new do
+          def save
+            false
+          end
         end
+        klass.send :include, SaveQueue::Object
+        klass.new
       end
-      klass.send :include, SaveQueue::Object
-      klass.new.save.should == false
+      
+      it "should return false" do
+        object.save.should == false
+      end
+
+      it "should not save queue" do
+        object.save_queue.should_not_receive(:save)
+        object.save
+      end
     end
+
     
     it "should not circle" do
       other_object = new_object

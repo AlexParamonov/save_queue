@@ -92,7 +92,7 @@ describe SaveQueue::ObjectQueue do
           expect{  queue.save }.to_not raise_error(SaveQueue::FailedSaveError)
           queue.save.should be_false
 
-          queue.errors.on(:save).should_not be_empty
+          queue.errors[:save].should_not be_empty
           queue.errors.should eq :save => { :processed  => @objects.values_at(:valid1, :valid2, :not_changed),
                                             :saved      => @objects.values_at(:valid1, :valid2),
                                             :failed     => @objects[:unsaved_but_changed],

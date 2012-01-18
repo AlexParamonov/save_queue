@@ -1,10 +1,17 @@
 Save Queue
 ==========
-Save Queue allows to push related objects to an object's queue for delayed save, that will triggered on object#save. In this case object wil store all related information on its save.
+Save Queue allows to push objects to other object's queue for delayed save.
+Queue save will triggered on object#save.
 
 Installation
 ------------
     gem install save_queue
+
+Contributing
+-------------
+__Please help to improve this project!__
+
+See [contributing guide](http://github.com/AlexParamonov/save_queue/blob/master/CONTRIBUTING.md) for best practices
 
 Usage
 -----
@@ -27,17 +34,30 @@ How to start:
           end
         end
 
+or implement #has_unsaved_changes? method by yourself:
+If you have custom logic for marking objects dirty then you may want to override
+\#has_unsaved_changes? method in you class like this:
+
+    def has_unsaved_changes?
+      dirty? # dirty is you custom method to determine has object unsaved_changes or not
+    end
+
+method \#mark_as_saved becomes useless in this case and you should mark objects by your self.
+
+
 3. point save method to your save logic or dont care if you use #save already:
 
         class Artice
           # @return [boolean]
           def save
-            write
+            write_to_db
           end
         end
 
-4.  If you want to use validation, include SaveQueue::Plugins::Validation and implement #valid? method. You may got failed objects by save_queue.objects_with_errors
+4.  If you want to use validation, include SaveQueue::Plugins::Validation and implement #valid? method. You may got failed objects from #errors\[:validation] array
+\#errors are empty if no errors occurs
 
+        require 'save_queue/plugins/validation'
         class Artice
           include SaveQueue::Plugins::Validation
 
@@ -63,7 +83,7 @@ How to start:
           def add_tag tag
             @tags ||= []
             @tags << tag
-            saved_queue.add tag
+            saved_queue.add tag # or use <<, push methods
           end
         end
 
@@ -71,53 +91,86 @@ How to start:
 
         article = Article.new
         tag_objects = [Tag.new, Tag.new, Tag.new]
-        article.tags = tag_object
+        article.tags = tag_objects
         article.add_tag Tag.new
 
         # that will save article and all tags in this article if article
         # and tags are valid, and if article.save and all tag.save returns true
+        # You may also use #save! method, that will trigger save_queue.save! and
+        # raise SaveQueue::FailedSaveError on fail
         article.save
+
+You may call it explicitly:
+
+    article.save_queue.save
+    article.save
+
+See test specs for more details.
 
 7. Handle errors
 
   7.1. You did not include SaveQueue::Plugins::Validation:
 
-        begin
-          article.save
-        rescue SaveQueue::FailedSaveError => save_error
+        unless article.save # article.save_queue.errors.any? or !article.save_queue.errors.empty?
+          # @option [Array<Object>] :processed
+          # @option [Array<Object>] :saved
+          # @option [Object]        :failed
+          # @option [Array<Object>] :pending
+          article.save_queue.errors[:save]
+        end
 
-          # @params [Hash] info
-          # @option info [Array<Object>] :saved
-          # @option info [Object]        :failed
-          # @option info [Array<Object>] :pending
-          save_error.context
+
+        begin
+          article.save!
+        rescue SaveQueue::FailedSaveError => error
+          # @option [Array<Object>] :processed
+          # @option [Array<Object>] :saved
+          # @option [Object]        :failed
+          # @option [Array<Object>] :pending
+          error.context
+
+          article.save_queue.errors[:save] # also set
         end
 
   7.2. You've included SaveQueue::Plugins::Validation:
 
-        # Note nothing was actually saved. You dont need to do a cleanup
+        # Note: queue was not saved. You dont need to do a cleanup
         unless article.save then
-          failed_objects = article.saved_query.objects_with_errors
+          failed_objects = article.errors[:validation]
+        end
+
+        begin
+          article.save!
+        rescue SaveQueue::FailedValidationError => error
+          # [Array<Object>]
+          error.failed_objects
+
+          article.save_queue.errors[:validation] # also set
+        end
+
+You may catch both errors by
+
+        begin
+          article.save!
+        rescue SaveQueue::Error
+          # do something
         end
 
 
+if you want not to save an object if save_queue is invalid then add this check to your save method (or any other method that you use, ex: valid?):
 
-If you have custom logic for marking objects dirty then you may want to override
-\#has_unsaved_changes? method in you class like this:
-
-    def has_unsaved_changes?
-      dirty? # dirty is you custom method to determine has object unsaved_changes or not
+    def save
+      return false unless save_queue.valid?
+      #..
     end
 
-method \#mark_as_saved becomes useless in this case and you should mark objects by your self.
-
-
-Note: Today Save Queue use only #save method to perform save actions on an objects, but later this should be changed to custom option.
+or you may add it to your validation.
+Note, that #valid? and #validate return true/false and #validate! raises SaveQueue::FailedValidationError exception
 
 Requirements
 ------------
 
-* ActiveSupport
+* hooks
 * rspec2 for testing
 
 Compatibility
@@ -133,11 +186,7 @@ tested with Ruby
 
 see [build history](http://travis-ci.org/#!/AlexParamonov/save_queue/builds)
 
-Contributing
--------------
-see [contributing guide](http://github.com/AlexParamonov/save_queue/blob/master/CONTRIBUTING.md)
-
 Copyright
 ---------
-Copyright © 2011 Alexander N Paramonov.
+Copyright © 2011-2012 Alexander N Paramonov.
 Released under the MIT License. See the LICENSE file for further details.

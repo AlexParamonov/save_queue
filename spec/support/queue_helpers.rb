@@ -11,3 +11,9 @@ def new_element(name = :element, options = {})
 
   element
 end
+
+def new_velement(options = {:valid => true})
+  object = new_element
+  object.stub(:valid?).and_return(options[:valid])
+  object
+end
