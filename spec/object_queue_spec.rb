@@ -61,7 +61,7 @@ describe SaveQueue::ObjectQueue do
       queue.save
     end
 
-    describe "failed save" do
+    context "at least one object in queue was not saved" do
       before(:each) do
         @objects ={}
         @objects[:valid1]               = new_element(:valid1)
@@ -75,24 +75,37 @@ describe SaveQueue::ObjectQueue do
           queue << object
         end
       end
-      
-      it "should raise SaveQueue::FailedSaveError if at least one object in queue was not saved" do
-        expect{  queue.save! }.to raise_error(SaveQueue::FailedSaveError) {|error| \
-          error.context.should == { :processed  => @objects.values_at(:valid1, :valid2, :not_changed),
-                                    :saved      => @objects.values_at(:valid1, :valid2),
-                                    :failed     => @objects[:unsaved_but_changed],
-                                    :pending    => @objects.values_at(:not_changed, :saved, :valid3) }
-        }
-      end
 
-      it "should not raise SaveQueue::FailedSaveError and provide errors array" do
-        expect{  queue.save }.to_not raise_error(SaveQueue::FailedSaveError)
-        queue.save.should be_false
-
-        queue.errors.should include ({:processed  => @objects.values_at(:valid1, :valid2, :not_changed),
+      describe "#save!" do
+        it "should raise SaveQueue::FailedSaveError" do
+          expect{  queue.save! }.to raise_error(SaveQueue::FailedSaveError) {|error| \
+            error.context.should == { :processed  => @objects.values_at(:valid1, :valid2, :not_changed),
                                       :saved      => @objects.values_at(:valid1, :valid2),
                                       :failed     => @objects[:unsaved_but_changed],
-                                      :pending    => @objects.values_at(:not_changed, :saved, :valid3) })
+                                      :pending    => @objects.values_at(:not_changed, :saved, :valid3) }
+          }
+        end
+      end
+
+      describe "#save" do
+        it "should not raise SaveQueue::FailedSaveError and provide errors array" do
+          expect{  queue.save }.to_not raise_error(SaveQueue::FailedSaveError)
+          queue.save.should be_false
+
+          queue.errors.on(:save).should_not be_empty
+          queue.errors.should eq :save => { :processed  => @objects.values_at(:valid1, :valid2, :not_changed),
+                                            :saved      => @objects.values_at(:valid1, :valid2),
+                                            :failed     => @objects[:unsaved_but_changed],
+                                            :pending    => @objects.values_at(:not_changed, :saved, :valid3) }
+        end
+      end
+
+      it "should not return errors for successful save" do
+        queue.save.should be_false
+
+        @objects[:unsaved_but_changed].stub(:save).and_return(true)
+        queue.save.should be_true
+        queue.errors.should be_empty
       end
     end
 

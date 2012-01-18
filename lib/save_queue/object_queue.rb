@@ -6,7 +6,7 @@ module SaveQueue
     attr_reader :errors
     def initialize(*args)
       super
-      @errors = []
+      @errors = {}
     end
 
     def add object
@@ -15,6 +15,7 @@ module SaveQueue
     end
 
     def save
+      @errors = {}
       saved     = []
       processed = []
 
@@ -23,7 +24,7 @@ module SaveQueue
 
           result = object.save
           if false == result
-            @errors.push FailedSaveError, {:processed => processed, :saved => saved, :failed => object, :pending => @queue - (saved + [object])}
+            @errors[:save] = {:processed => processed, :saved => saved, :failed => object, :pending => @queue - (saved + [object])}
             return false
           end
 
@@ -39,7 +40,7 @@ module SaveQueue
 
     def save!
       if false == save
-        raise FailedSaveError, errors.last
+        raise FailedSaveError, errors[:save]
       end
     end
 
