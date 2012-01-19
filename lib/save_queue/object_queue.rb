@@ -34,6 +34,8 @@ module SaveQueue
 
       result
     end
+    alias_method :push, :add
+    alias_method :<<,   :add
 
     def save
       save!

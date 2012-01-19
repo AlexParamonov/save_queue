@@ -1,5 +1,8 @@
 require 'observer'
 require 'save_queue/object_queue'
+if RUBY_VERSION < "1.9"
+  require "save_queue/ruby1.9/observer"
+end
 
 module SaveQueue
   module Object
@@ -89,13 +92,26 @@ module SaveQueue
       queue.add_observer(self, :mark_as_changed)
 
       notifier = Module.new do
-        def add(*args)
-          super if defined? super
-          changed
-          notify_observers
-        end
-        alias_method :push, :add
-        alias_method :<<,   :add
+        # Ruby 1.8 does not change parent for alias_method
+        module_eval(
+          %w[add push <<].map do |method|
+            <<-EVAL
+            def #{method}(*args)
+              super if defined? super
+              changed
+              notify_observers
+            end
+            EVAL
+          end.reduce(:+)
+        )
+
+        #def add(*args)
+        #  super if defined? super
+        #  changed
+        #  notify_observers
+        #end
+        #alias_method :push, :add
+        #alias_method :<<,   :add
       end
       queue.send :extend, notifier
 

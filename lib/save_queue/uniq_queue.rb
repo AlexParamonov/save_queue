@@ -9,6 +9,7 @@ module SaveQueue
                          :clear,
                          :inspect,
                          :to_s,
+                         :first,
                          :last,
                          :pop,
                          :shift]
