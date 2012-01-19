@@ -8,9 +8,9 @@ Gem::Specification.new do |s|
   s.authors     = ["Alexander Paramonov"]
   s.email       = ["alexander.n.paramonov@gmail.com"]
   s.homepage    = "http://github.com/AlexParamonov/save_queue"
-  s.summary     = %q{Push related objects to a queue for delayed save}
-  s.description = %q{Save Queue allows to push objects to other object's queue for delayed save.
-Queue save will triggered on object#save.}
+  s.summary     = %q{Push related objects to a queue for a delayed save}
+  s.description = %q{Save Queue allows to push objects to other object's queue for a delayed save.
+Queue save will be triggered by object#save.}
 
   s.rubyforge_project = "save_queue"
 
