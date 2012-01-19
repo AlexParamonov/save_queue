@@ -1,3 +1,4 @@
+require 'observer'
 require 'save_queue/object_queue'
 
 module SaveQueue
@@ -55,9 +56,7 @@ module SaveQueue
     end
 
     def initialize(*args)
-      queue = self.class.queue_class.new
-      instance_variable_set "@_save_queue", queue
-
+      create_queue
       super if defined?(super)
 
       # this will make RunAlwaysFirst methods triggered first in inheritance tree
@@ -68,6 +67,7 @@ module SaveQueue
       instance_variable_set "@_changed_mark", true
     end
 
+    # @returns [Boolean] true if object has been modified
     def has_unsaved_changes?
       status = instance_variable_get("@_changed_mark")
       status.nil? ? false : status
@@ -79,6 +79,27 @@ module SaveQueue
 
     def mark_as_saved
       instance_variable_set "@_changed_mark", false
+    end
+
+    private
+    def create_queue
+      klass = Class.new(self.class.queue_class)
+      klass.send :include, Observable
+      queue = klass.new
+      queue.add_observer(self, :mark_as_changed)
+
+      notifier = Module.new do
+        def add(*args)
+          super if defined? super
+          changed
+          notify_observers
+        end
+        alias_method :push, :add
+        alias_method :<<,   :add
+      end
+      queue.send :extend, notifier
+
+      instance_variable_set "@_save_queue", queue
     end
   end
 end

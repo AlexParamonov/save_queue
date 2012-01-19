@@ -13,7 +13,6 @@ module SaveQueue
     define_hook :before_add
     define_hook :after_add
 
-
     # @return [Hash] save
     # @option save [Array<Object>] :processed
     # @option save [Array<Object>] :saved

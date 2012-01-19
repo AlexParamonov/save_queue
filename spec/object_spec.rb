@@ -21,6 +21,14 @@ describe SaveQueue::Object do
 
       klass.new.should_not have_unsaved_changes
     end
+
+    [:add, :<<, :push].each do |method|
+      it "should return true if save_queue was changed by ##{method}" do
+        object.mark_as_saved
+        object.save_queue.send method, new_object
+        object.should have_unsaved_changes
+      end
+    end
   end
 
   describe "marks" do
@@ -144,13 +152,12 @@ describe SaveQueue::Object do
 
   describe "queue" do
 
-    
     it "should mapped to SaveQueue::ObjectQueue by default" do
       klass = new_class
       klass.queue_class.should be SaveQueue::ObjectQueue
     end
 
-    describe "queue changes" do
+    describe "queue class changes" do
       #let(:queue)       { Class.new }
       #let(:other_queue) { Class.new }
       #before(:each) do
@@ -178,8 +185,6 @@ describe SaveQueue::Object do
         object.save_queue.should     be_a       queue_class
       end
     end
-        
-
 
     describe "inheritance" do
       let(:queue_class)       { Class.new }

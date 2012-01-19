@@ -3,6 +3,7 @@ module SaveQueue
   class UniqQueue
     extend ::Forwardable
     DELEGATED_METHODS = [:empty?,
+                         :any?,
                          :size,
                          :count,
                          :clear,
