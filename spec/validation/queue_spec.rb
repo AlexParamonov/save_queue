@@ -9,18 +9,60 @@ end
 describe ValidQueue do
   let(:queue) { ValidQueue.new }
 
-  describe "invalid objects" do
-    let(:invalid_objects) { [] }
+  context "contains valid objects" do
+    let(:valid_objects) do
+      3.times.map do
+        new_velement(:valid => true)
+      end
+    end
+
     before(:each) do
-      3.times do
-        invalid_objects << new_velement(:valid => false)
+      queue.add_all valid_objects
+    end
+
+    describe "#save" do
+      it "should save all of them" do
+        valid_objects.each{|o| o.should_receive(:save).once}
+        queue.save.should be_true
       end
 
+      it "should not has any errors" do
+        queue.save.should be_true
+        queue.errors.should be_empty
+      end
+    end
+
+    describe "#save!" do
+      it "should save all of them" do
+        valid_objects.each{|o| o.should_receive(:save).once}
+        queue.save!
+      end
+
+      it "should not raise any exception" do
+        expect { queue.save! }.not_to raise_error
+      end
+
+      it "should not has any errors" do
+        queue.save!
+        queue.errors.should be_empty
+      end
+    end
+  end
+
+
+  describe "contains invalid objects" do
+    let(:invalid_objects) do
+      3.times.map do
+        new_velement(:valid => false)
+      end
+    end
+
+    before(:each) do
       queue.add_all invalid_objects
     end
-    
-    describe "save" do
-      it "should not be saved" do
+
+    describe "#save" do
+      it "should not saved them" do
         invalid_objects.each{|o| o.should_not_receive(:save)}
         queue.save.should be_false
       end
@@ -31,7 +73,13 @@ describe ValidQueue do
       end
     end
 
-    describe "save!" do
+    describe "#save!" do
+      it "should not saved them" do
+        pending "solve isolation issue"
+        invalid_objects.each{|o| o.should_not_receive(:save)}
+        lambda {queue.save!}.call
+      end
+
       it "should raise SaveQueue::FailedValidationError exception" do
         expect { queue.save! }.to raise_error(SaveQueue::FailedValidationError)
       end
@@ -39,40 +87,6 @@ describe ValidQueue do
       it "should set errors" do
         expect{queue.save!}.to raise_error
         queue.errors[:validation].should_not be_empty
-      end
-    end
-  end
-
-  describe "valid objects" do
-    let(:valid_objects) { [] }
-    before(:each) do
-      3.times do
-        valid_objects << new_velement(:valid => true)
-      end
-
-      queue.add_all valid_objects
-    end
-
-    describe "save" do
-      it "should be saved" do
-        valid_objects.each{|o| o.should_receive(:save).once}
-        queue.save.should be_true
-      end
-
-      it "should not set errors" do
-        queue.save.should be_true
-        queue.errors.should be_empty
-      end
-    end
-
-    describe "save!" do
-      it "should not raise an exception" do
-        expect { queue.save! }.to_not raise_error
-      end
-
-      it "should not set errors" do
-        queue.save!
-        queue.errors.should be_empty
       end
     end
   end
@@ -113,7 +127,7 @@ describe ValidQueue do
   #    it "should return true if objects were valid" do
   #      @save_queue.add @valid
   #
-  #      expect{ @save_queue.validate! }.to_not raise_error SaveQueue::Plugins::Validation::FailedValidationError
+  #      expect{ @save_queue.validate! }.not_to raise_error SaveQueue::Plugins::Validation::FailedValidationError
   #
   #      @save_queue.validate!.should be_true
   #    end
