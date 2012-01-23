@@ -75,9 +75,12 @@ describe ValidQueue do
 
     describe "#save!" do
       it "should not saved them" do
-        pending "solve isolation issue"
-        invalid_objects.each{|o| o.should_not_receive(:save)}
-        lambda {queue.save!}.call
+        invalid_objects.each do |o|
+          o.as_null_object
+          o.should_not_receive(:save)
+        end
+
+        expect {queue.save!}.to raise_error
       end
 
       it "should raise SaveQueue::FailedValidationError exception" do

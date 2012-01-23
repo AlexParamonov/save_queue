@@ -27,7 +27,10 @@ module SaveQueue
     end
 
     def add object
-      @queue << object unless @queue.include? object
+      return false if @queue.include? object
+      @queue << object
+
+      true
     end
     alias_method :push, :add
     alias_method :<<,   :add

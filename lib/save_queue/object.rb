@@ -1,8 +1,4 @@
-require 'observer'
 require 'save_queue/object_queue'
-if RUBY_VERSION < "1.9"
-  require "save_queue/ruby1.9/observer"
-end
 
 module SaveQueue
   module Object
@@ -10,7 +6,12 @@ module SaveQueue
       base.class_eval do
 
         class<<self
-          attr_accessor :queue_class
+          attr_reader :queue_class
+
+          def queue_class=(klass)
+            raise "Your Queue implementation: #{klass} should include Hooks module!" unless klass.include? Hooks
+            @queue_class = klass
+          end
         end
 
         def self.inherited base
@@ -23,19 +24,7 @@ module SaveQueue
 
 
     module RunAlwaysFirst
-      # @return [Boolean]
-      #def save(*args)
-      #  #return false if defined?(super) and false == super
-      #
-      #  super_saved = super if defined?(super)
-      #  # object is saved here
-      #  mark_as_saved
-      #
-      #  save_queue.save ? (super_saved || true) : false
-      #end
-
       # can not reilly on save! here, because client may not define it at all
-      # TODO FIXME may try to save it twice if added to different objects queues and super returned false.
       def save(*args)
         super_result = true
         super_result = super if defined?(super)
@@ -44,7 +33,7 @@ module SaveQueue
 
         mark_as_saved
         if save_queue.save
-          true == super_result ? true : super_result
+          true == super_result ? true : super_result # super_result may be not boolean, String for ex
         else
           false
         end
@@ -86,35 +75,8 @@ module SaveQueue
 
     private
     def create_queue
-      klass = Class.new(self.class.queue_class)
-      klass.send :include, Observable
+      klass = self.class.queue_class
       queue = klass.new
-      queue.add_observer(self, :mark_as_changed)
-
-      notifier = Module.new do
-        # Ruby 1.8 does not change parent for alias_method
-        module_eval(
-          %w[add push <<].map do |method|
-            <<-EVAL
-            def #{method}(*args)
-              super if defined? super
-              changed
-              notify_observers
-            end
-            EVAL
-          end.reduce(:+)
-        )
-
-        #def add(*args)
-        #  super if defined? super
-        #  changed
-        #  notify_observers
-        #end
-        #alias_method :push, :add
-        #alias_method :<<,   :add
-      end
-      queue.send :extend, notifier
-
       instance_variable_set "@_save_queue", queue
     end
   end

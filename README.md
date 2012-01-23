@@ -3,6 +3,24 @@ Save Queue
 Save Queue allows to push objects to other object's queue for a delayed save.
 Queue save will be triggered by object#save.
 
+
+Contents
+---------
+1. Installation
+1. Contributing
+1. Usage
+    * Getting started
+    * Tracking changes
+    * Error handling
+1. Plugins
+    * Validation
+    * Notification
+1. Creating your own Queues / TODO
+1. FAQ
+1. Requirements
+1. Compatibility
+1. Copyright
+
 Installation
 ------------
     gem install save_queue
@@ -101,8 +119,8 @@ Usage
 7. Read README for more details :)
 
 
-### Tracing changes
-By default SaveQueue provide changes tracing functional.
+### Tracking changes
+By default SaveQueue provide changes tracking functional.
 In order to use it, call #mark_as_changed method in your mutator methods like this:
 
     require "save_queue"
@@ -180,7 +198,7 @@ Plugins
 -------
 I am trying to extract any "extra" functionality into separate plugins, that you may want to include.
 
-### Validation plugin
+### Validation
 
 If you want to use validation, include SaveQueue::Plugins::Validation and implement #valid? method.
 You may got failed objects from save_queue.errors\[:validation] array.
@@ -253,7 +271,16 @@ if you want not to save an object if save_queue is invalid then add this check t
 or you may add it to your validation.
 Note, that #valid? and #validate return true/false and #validate! raises SaveQueue::FailedValidationError exception
 
+### Notification
 
+/ TODO
+
+
+Creating your own Queues
+-------------------------
+
+
+/ TODO
 
 FAQ
 ---

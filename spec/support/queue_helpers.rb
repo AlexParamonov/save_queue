@@ -17,3 +17,10 @@ def new_velement(options = {:valid => true})
   object.stub(:valid?).and_return(options[:valid])
   object
 end
+
+def new_queue_class(options = {})
+  queue_class = Class.new
+  queue_class.stub(:include?).with(Hooks).and_return(true)
+
+  queue_class
+end

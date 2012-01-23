@@ -1,4 +1,5 @@
 require 'forwardable'
+# TODO remove hooks or extract to a module
 require 'hooks'
 require 'save_queue/uniq_queue'
 
@@ -30,12 +31,17 @@ module SaveQueue
       check_requirements_for object
       result = super object
 
-      run_hook :after_add
+      run_hook :after_add, result, object
 
       result
     end
+
+    def << object
+      add object
+      self
+    end
+
     alias_method :push, :add
-    alias_method :<<,   :add
 
     def save
       save!

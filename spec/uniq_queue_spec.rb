@@ -30,6 +30,7 @@ describe SaveQueue::UniqQueue do
 
   [:add, :<<, :push].each do |method|
     describe "##{method}" do
+      let(:element) { new_element }
       it "should add object to a queue" do
         queue.should be_empty
 
@@ -43,7 +44,6 @@ describe SaveQueue::UniqQueue do
       end
 
       it "should add object to a queue once" do
-        element = new_element
         queue.should be_empty
 
         queue.send(method, element)
@@ -51,6 +51,17 @@ describe SaveQueue::UniqQueue do
 
         queue.send(method, element)
         queue.should have(1).elements
+      end
+
+      it "should return true" do
+        queue.send(method, element).should === true
+      end
+
+      it "should return false if element was not added" do
+        queue.send(method, element)
+        queue.should have(1).elements
+        
+        queue.send(method, element).should === false
       end
     end
   end
@@ -112,11 +123,9 @@ describe SaveQueue::UniqQueue do
     let(:queue_var) { queue.instance_variable_get("@queue") }
 
     SaveQueue::UniqQueue::DELEGATED_METHODS.each do |method|
-      describe "##{method}" do
-        it "should delegate to @queue##{method}" do
-          queue_var.should_receive(method).once
-          queue.send method
-        end
+      it "##{method}\tshould delegate to @queue##{method}" do
+        queue_var.should_receive(method).once
+        queue.send method
       end
     end
   end

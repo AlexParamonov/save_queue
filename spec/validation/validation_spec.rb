@@ -12,8 +12,8 @@ describe SaveQueue::Plugins::Validation do
 
     it "should not change original SaveQueue::*Queue class" do
       klass = new_class
-      klass.queue_class = Class.new
       old_queue = klass.queue_class
+      klass.queue_class = Class.new(old_queue)
       
       klass.send :include, SaveQueue::Plugins::Validation
       old_queue.should_not include SaveQueue::Plugins::Validation::Queue

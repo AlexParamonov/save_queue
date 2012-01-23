@@ -10,19 +10,24 @@ describe SaveQueue::ObjectQueue do
       #it "should add only objects that implement SaveQueue::Object interface" do
       it "should accept objects that respond to #save and #has_unsaved_changes?" do
         element = stub(:element, :save => true, :has_unsaved_changes? => true)
-        expect{ queue.add element }.not_to raise_error
+        expect{ queue.send method, element }.not_to raise_error
       end
 
       it "should not accept objects that does not respond to #save" do
         element.unstub(:save)
-        expect{ queue.add element }.to raise_error ArgumentError, "#{element.inspect} does not respond to #save"
+        expect{ queue.send method, element }.to raise_error ArgumentError, "#{element.inspect} does not respond to #save"
       end
 
       it "should not accept objects that does not respond to #has_unsaved_changes?" do
         element.unstub(:has_unsaved_changes?)
-        expect{ queue.add element }.to raise_error ArgumentError, "#{element.inspect} does not respond to #has_unsaved_changes?"
+        expect{ queue.send method, element }.to raise_error ArgumentError, "#{element.inspect} does not respond to #has_unsaved_changes?"
       end
     end
+  end
+
+  it "#<< method should be able to add objects in chain" do
+    queue << new_element << new_element
+    queue.should have(2).elements
   end
 
   describe "#save" do
@@ -133,7 +138,7 @@ describe SaveQueue::ObjectQueue do
       end
 
       it "should not save already saved objects" do
-        pending "solve isolation issue with this test"
+        pending "rewrite this test as integration"
         @objects.values_at(:valid1, :valid2, :not_changed).each do |object|
           object.should_not_receive(:save)
         end
