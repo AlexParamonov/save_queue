@@ -273,12 +273,35 @@ Note, that #valid? and #validate return true/false and #validate! raises SaveQue
 
 ### Notification
 
-/ TODO
+If you want to use notification, include SaveQueue::Plugins::Notification.
+You'll get object notified by #queue_changed_event method, which by default call #mark_as_changed method if queue was successfuly changed.
+You may override this method in your object if you want to.
+
+    class Artice
+      include SaveQueue
+      include SaveQueue::Plugins::Notification
+    end
+
+    article = Article.new
+    article.mark_as_saved
+    article.save_queue << tag
+    article.should have_unsaved changes
+
+    class Artice
+      def queue_changed_event(result, object)
+        super
+        puts "queue was changed!"
+      end
+    end
+
+    article = Article.new
+    article.mark_as_saved
+    article.save_queue << tag # "queue was changed!"
+    article.should have_unsaved changes
 
 
 Creating your own Queues
 -------------------------
-
 
 / TODO
 
