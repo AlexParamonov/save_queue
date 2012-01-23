@@ -274,6 +274,8 @@ If you want to use notification, include SaveQueue::Plugins::Notification.
 You'll get object notified by #queue_changed_event method, which by default call #mark_as_changed method if queue was successfuly changed.
 You may override this method in your object if you want to.
 
+    require 'save_queue/plugins/notification'
+
     class Artice
       include SaveQueue
       include SaveQueue::Plugins::Notification
@@ -282,7 +284,7 @@ You may override this method in your object if you want to.
     article = Article.new
     article.mark_as_saved
     article.save_queue << tag
-    article.should have_unsaved changes
+    article.should have_unsaved_changes
 
     class Artice
       def queue_changed_event(result, object)
