@@ -65,10 +65,13 @@ Usage
         class Tag
           include SaveQueue
 
-          @attributes ||= {}
-          @attributes[attr] = value
-          mark_as_changed # call this and object will be marked for save
+          def change_attribute attr, value
+            @attributes ||= {}
+            @attributes[attr] = value
+            mark_as_changed # call this and object will be marked for save
+          end
         end
+
 
 4. Add some functionality:
 
