@@ -142,9 +142,6 @@ There are some docs from spec tests:
       should return true for changed object
       should return false for unchanged object
       should return false for new object
-      should return true if save_queue was changed by #add
-      should return true if save_queue was changed by #<<
-      should return true if save_queue was changed by #push
 
 If you have custom logic for marking objects dirty then you may want to override
 \#has_unsaved_changes? method, methods #mark_as_saved and #mark_as_changed in you class like this:
@@ -204,20 +201,20 @@ If you want to use validation, include SaveQueue::Plugins::Validation and implem
 You may got failed objects from save_queue.errors\[:validation] array.
 \save_queue.errors are empty if no errors occurs
 
-        require 'save_queue'
-        require 'save_queue/plugins/validation'
+    require 'save_queue'
+    require 'save_queue/plugins/validation'
 
-        class Artice
-          include SaveQueue
-          include SaveQueue::Plugins::Validation
+    class Artice
+      include SaveQueue
+      include SaveQueue::Plugins::Validation
 
-          # @return [boolean]
-          def valid?
-            true
-          end
+      # @return [boolean]
+      def valid?
+        true
+      end
 
-          # ...
-        end
+      # ...
+    end
 
 There are specs for them:
 
