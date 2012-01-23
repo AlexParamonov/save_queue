@@ -108,8 +108,8 @@ Usage
 
         article.add_tag tag
 
-        # that will save article and all tags in this article if article
-        # and tags are valid, and if article.save and all tag.save returns true
+        # that will save article and all tags in this article if article.save
+        # and all tag.save returns true.
         # You may also use #save! method, that will trigger save_queue.save! and
         # raise SaveQueue::FailedSaveError on fail
         article.save.should be_true
@@ -127,6 +127,7 @@ By default SaveQueue provide changes tracking functional.
 In order to use it, call #mark_as_changed method in your mutator methods like this:
 
     require "save_queue"
+    
     class Artice
       include SaveQueue
 
@@ -222,20 +223,22 @@ You may got failed objects from save_queue.errors\[:validation] array.
 There are specs for them:
 
     ValidQueue
-      invalid objects
-        save
-          should not be saved
+      contains valid objects
+        #save
+          should save all of them
+          should not has any errors
+        #save!
+          should save all of them
+          should not raise any exception
+          should not has any errors
+      contains invalid objects
+        #save
+          should not save them
           should set errors
-        save!
+        #save!
+          should not save them
           should raise SaveQueue::FailedValidationError exception
           should set errors
-      valid objects
-        save
-          should be saved
-          should not set errors
-        save!
-          should not raise an exception
-          should not set errors
 
 Also you got more error hangling options:
 
@@ -286,7 +289,7 @@ You may override this method in your object if you want to.
 
     article = Article.new
     article.mark_as_saved
-    article.save_queue << tag
+    article.save_queue << tag # this will trigger callback, that will mark article as changed
     article.should have_unsaved_changes
 
     class Artice

@@ -62,7 +62,7 @@ describe ValidQueue do
     end
 
     describe "#save" do
-      it "should not saved them" do
+      it "should not save them" do
         invalid_objects.each{|o| o.should_not_receive(:save)}
         queue.save.should be_false
       end
@@ -74,7 +74,7 @@ describe ValidQueue do
     end
 
     describe "#save!" do
-      it "should not saved them" do
+      it "should not save them" do
         invalid_objects.each do |o|
           o.as_null_object
           o.should_not_receive(:save)
