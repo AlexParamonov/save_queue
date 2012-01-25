@@ -228,23 +228,57 @@ You may got failed objects from save_queue.errors\[:validation] array.
 
 There are specs for them:
 
-    ValidQueue
+    QueueWithValidation
+      is empty
+        should be valid
+        #save
+          should be true
+        #save!
+          should not raise Exception
       contains valid objects
         #save
-          should save all of them
-          should not has any errors
+          should be true
+          should save all elements
         #save!
-          should save all of them
+          should not raise Exception
+          should save all elements
+        #valid?
+          should be true
+          should not has any errors
+        #validate!
           should not raise any exception
           should not has any errors
       contains invalid objects
-        #save
-          should not save them
-          should set errors
-        #save!
-          should not save them
-          should raise SaveQueue::FailedValidationError exception
-          should set errors
+        behaves like queue with invalid objects
+          #save
+            should be false
+            should not save elements
+          #save!
+            should raise SaveQueue::FailedValidationError
+            should not save elements
+          #valid?
+            should be false
+            should set errors
+          #validate!
+            should raise SaveQueue::FailedValidationError exception
+            should set errors
+      contains mix of valid and invalid objects
+        #save should call #valid?
+        #save! should call #validate!
+        behaves like queue with invalid objects
+          #save
+            should be false
+            should not save elements
+          #save!
+            should raise SaveQueue::FailedValidationError
+            should not save elements
+          #valid?
+            should be false
+            should set errors
+          #validate!
+            should raise SaveQueue::FailedValidationError exception
+            should set errors
+
 
 Also you got more error hangling options:
 
