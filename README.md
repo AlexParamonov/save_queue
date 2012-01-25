@@ -33,6 +33,7 @@ Contributing
 __Please help to improve this project!__
 
 See [contributing guide](http://github.com/AlexParamonov/save_queue/blob/master/CONTRIBUTING.md) for best practices
+I am using [gitflow](https://github.com/nvie/gitflow) so send your pull requests to develop branch.
 
 Usage
 -----
