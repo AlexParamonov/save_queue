@@ -24,3 +24,6 @@ def new_queue_class(options = {})
 
   queue_class
 end
+
+
+ADD_METHODS = %w[add << push]

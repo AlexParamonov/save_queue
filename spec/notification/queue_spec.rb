@@ -8,7 +8,7 @@ end
 describe QueueWithNotification do
   let(:queue) { QueueWithNotification.new }
 
-  [:add, :<<, :push].each do |method|
+  ADD_METHODS.each do |method|
     describe "##{method}" do
       let(:element) { new_element }
       

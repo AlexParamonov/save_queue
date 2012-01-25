@@ -5,7 +5,7 @@ describe SaveQueue::ObjectQueue do
   let(:queue)   { SaveQueue::ObjectQueue.new }
   let(:element) { new_element(:element)       }
 
-  [:add, :<<, :push].each do |method|
+  ADD_METHODS.each do |method|
     describe "##{method}" do
       #it "should add only objects that implement SaveQueue::Object interface" do
       it "should accept objects that respond to #save and #has_unsaved_changes?" do
