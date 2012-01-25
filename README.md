@@ -1,5 +1,8 @@
 Save Queue
 ==========
+[![Build Status](https://secure.travis-ci.org/AlexParamonov/save_queue.png)](http://travis-ci.org/AlexParamonov/save_queue)
+[![Gemnasium Build Status](https://gemnasium.com/AlexParamonov/save_queue.png)](http://gemnasium.com/AlexParamonov/save_queue)
+
 Save Queue allows to push objects to other object's queue for a delayed save.
 Queue save will be triggered by object#save.
 
