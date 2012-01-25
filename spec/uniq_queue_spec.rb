@@ -3,7 +3,7 @@ require "save_queue/uniq_queue"
 
 describe SaveQueue::UniqQueue do
   let(:queue)   { SaveQueue::UniqQueue.new }
-  #let(:element) { new_element(:element)    }
+  let(:element) { new_element(:element)    }
 
   [:size, :count].each do |method|
     describe "##{method}" do
@@ -28,30 +28,34 @@ describe SaveQueue::UniqQueue do
     end
   end
 
-  [:add, :<<, :push].each do |method|
-    describe "##{method}" do
-      let(:element) { new_element }
-      it "should add object to a queue" do
-        queue.should be_empty
+  shared_examples_for "add method" do
+    it "should add object to a queue" do
+      queue.should be_empty
 
-        queue.send(method, new_element)
-        queue.should_not be_empty
-        queue.should have(1).elements
+      queue.send(method, new_element)
+      queue.should_not be_empty
+      queue.should have(1).elements
 
-        queue.send(method, new_element)
-        queue.should_not be_empty
-        queue.should have(2).elements
-      end
+      queue.send(method, new_element)
+      queue.should_not be_empty
+      queue.should have(2).elements
+    end
 
-      it "should add object to a queue once" do
-        queue.should be_empty
+    it "should add object to a queue once" do
+      queue.should be_empty
 
-        queue.send(method, element)
-        queue.should have(1).elements
+      queue.send(method, element)
+      queue.should have(1).elements
 
-        queue.send(method, element)
-        queue.should have(1).elements
-      end
+      queue.send(method, element)
+      queue.should have(1).elements
+    end
+  end
+
+  [:add, :push].each do |add_method|
+    describe "##{add_method}" do
+      let(:method) { add_method }
+      it_behaves_like "add method"
 
       it "should return true" do
         queue.send(method, element).should === true
@@ -60,13 +64,32 @@ describe SaveQueue::UniqQueue do
       it "should return false if element was not added" do
         queue.send(method, element)
         queue.should have(1).elements
-        
+
         queue.send(method, element).should === false
       end
     end
   end
 
+  describe "#<<" do
+    let(:method) { :<< }
+    it_behaves_like "add method"
+
+    it "should be able to add objects in chain" do
+      queue << new_element << new_element
+      queue.should have(2).elements
+    end
+  end
+
   describe "#add_all" do
+    it "should add a collection to queue" do
+      queue.should be_empty
+
+      collection = [1,2,3]
+      queue.add_all collection
+
+      queue.should have(3).elements
+    end
+
     it "should delegate to #add" do
       queue.should_receive(:add).exactly(3).times
       queue.add_all [1,2,3]

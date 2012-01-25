@@ -25,11 +25,6 @@ describe SaveQueue::ObjectQueue do
     end
   end
 
-  it "#<< method should be able to add objects in chain" do
-    queue << new_element << new_element
-    queue.should have(2).elements
-  end
-
   describe "#save" do
     it "should save all object in queue" do
       5.times do
@@ -68,6 +63,23 @@ describe SaveQueue::ObjectQueue do
 
       element.should_receive(:save).once.and_return(true)
       queue.save
+    end
+
+    it "should fail if element#save returns boolean false" do
+      element = new_element
+      element.stub(:save).and_return(false)
+      queue << element
+      queue.save.should be_false
+    end
+
+    it "should not fail if element#save returns other than boolean false" do
+      ["", 0, nil, "string", true, Class.new].each do |value|
+        element = new_element
+        element.stub(:save).and_return(value)
+        queue << element
+      end
+
+      queue.save.should be_true
     end
   end
 

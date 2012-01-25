@@ -18,7 +18,6 @@ module SaveQueue
           changed
           notify_observers(*args)
         end
-
       end
     end
   end

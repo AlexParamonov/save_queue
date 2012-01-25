@@ -32,7 +32,15 @@ module SaveQueue
 
       true
     end
-    alias_method :push, :add
-    alias_method :<<,   :add
+
+    #alias_method :push, :add # Not working as expected: does not save inheritance
+    def push(*args)
+      add *args
+    end
+    
+    def << *args
+      add *args
+      self
+    end
   end
 end
