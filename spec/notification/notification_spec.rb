@@ -35,7 +35,7 @@ describe SaveQueue::Plugins::Notification do
     end
 
     [:add, :<<, :push].each do |method|
-      it "should mark object as changed if save_queue was changed by ##{method}" do
+      it "should mark object as changed if save_queue was changed by ##{method} method" do
         object.mark_as_saved
         object.save_queue.send method, new_object
         object.should have_unsaved_changes
