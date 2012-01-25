@@ -96,6 +96,12 @@ describe SaveQueue::UniqQueue do
       queue.add_all [1,2,3]
     end
 
+    context "not array object passed as parameter" do
+      it_behaves_like "add method" do
+        let(:method) { "add" }
+      end
+    end
+
     it "should act as #add if single argument passed" do
       queue.should_receive(:add).once
       queue.add_all 1
