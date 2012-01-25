@@ -95,16 +95,18 @@ Usage
 
         article = Article.new
 
+        # Add collection
         tag_objects = []
         3.times do
           tag = Tag.new
           tag.change_attribute :title, "new tag"
-          tag.should_receive(:save).once
+          tag.should_receive(:save).once # object in queue will be saved, because it attributes were changed
           tag_objects << tag
         end
         
         article.tags = tag_objects
 
+        # Add single element
         tag = Tag.new
         tag.change_attribute :title, "single tag"
         tag.should_receive(:save).once
@@ -150,7 +152,7 @@ There are some docs from spec tests:
       should return false for unchanged object
       should return false for new object
 
-If you have custom logic for marking objects dirty then you may want to override
+If you have custom logic for marking objects dirty then you may want to overwrite
 \#has_unsaved_changes? method, methods #mark_as_saved and #mark_as_changed in you class like this:
 
     def has_unsaved_changes?
@@ -281,7 +283,7 @@ Note, that #valid? and #validate return true/false and #validate! raises SaveQue
 
 If you want to use notification, include SaveQueue::Plugins::Notification.
 You'll get object notified by #queue_changed_event method, which by default call #mark_as_changed method if queue was successfuly changed.
-You may override this method in your object if you want to.
+You may overwrite this method in your object if you want to.
 
     require 'save_queue/plugins/notification'
 
