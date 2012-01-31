@@ -8,18 +8,19 @@ describe SaveQueue::Object do
     it "should return true for changed object" do
       object.mark_as_changed
       object.should have_unsaved_changes
+      object.has_unsaved_changes?.should eq true
     end
 
     it "should return false for unchanged object" do
       object.mark_as_saved
-      object.should_not have_unsaved_changes
+      object.has_unsaved_changes?.should eq false
     end
 
     it "should return false for new object" do
       klass = Class.new
       klass.send :include, SaveQueue::Object
 
-      klass.new.should_not have_unsaved_changes
+      klass.new.has_unsaved_changes?.should eq false
     end
   end
 
