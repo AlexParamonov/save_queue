@@ -26,20 +26,19 @@ module SaveQueue
     module RunAlwaysFirst
       # can not reilly on save! here, because client may not define it at all
       def save(*args)
-        super_result = true
-        super_result = super if defined?(super)
-
-        return false unless !!super_result
+        if defined?(super)
+          super_result = super
+          return false if false == super_result
+        end
 
         mark_as_saved
-        if save_queue.save
-          true == super_result ? true : super_result # super_result may be not boolean, String for ex
-        else
-          false
-        end
+
+        return false unless save_queue.save
+
+        super_result || true
       end
 
-      # Suppose,that save! raise an Exception if failed to save an object
+      # Expect save! to raise an Exception if failed to save an object
       def save!
         super if defined?(super)
         mark_as_saved
@@ -56,28 +55,25 @@ module SaveQueue
     end
 
     def mark_as_changed
-      instance_variable_set "@_changed_mark", true
+      @_changed_mark = true
     end
 
     # @returns [Boolean] true if object has been modified
     def has_unsaved_changes?
-      status = instance_variable_get("@_changed_mark")
-      status.nil? ? false : status
+      @_changed_mark ||= false
     end
 
     def save_queue
-      instance_variable_get "@_save_queue"
+      @_save_queue
     end
 
     def mark_as_saved
-      instance_variable_set "@_changed_mark", false
+      @_changed_mark = false
     end
 
     private
     def create_queue
-      klass = self.class.queue_class
-      queue = klass.new
-      instance_variable_set "@_save_queue", queue
+      @_save_queue = self.class.queue_class.new
     end
   end
 end
