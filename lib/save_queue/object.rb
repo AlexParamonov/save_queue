@@ -3,22 +3,21 @@ require 'save_queue/object_queue'
 module SaveQueue
   module Object
     def self.included base
-      base.class_eval do
+      base.send :extend, ClassMethods
+    end
+    
+    module ClassMethods
+      def queue_class
+        @queue_class ||= ObjectQueue
+      end
 
-        class<<self
-          attr_reader :queue_class
+      def queue_class=(klass)
+        raise "Your Queue implementation: #{klass} should include Hooks module!" unless klass.include? Hooks
+        @queue_class = klass
+      end
 
-          def queue_class=(klass)
-            raise "Your Queue implementation: #{klass} should include Hooks module!" unless klass.include? Hooks
-            @queue_class = klass
-          end
-        end
-
-        def self.inherited base
-          base.queue_class = self.queue_class
-        end
-
-        self.queue_class ||= ObjectQueue
+      def inherited base
+        base.queue_class = self.queue_class
       end
     end
 
