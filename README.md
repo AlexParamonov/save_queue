@@ -400,6 +400,7 @@ tested with Ruby
 * 1.9.2
 * 1.9.3
 * jruby-18mode
+* jruby-19mode
 * rbx-19mode
 * rbx-18mode
 * ruby-head
