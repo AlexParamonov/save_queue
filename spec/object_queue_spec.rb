@@ -81,6 +81,12 @@ describe SaveQueue::ObjectQueue do
 
       queue.save.should be_true
     end
+
+    it "should clear itself if saved successfully" do
+      #queue.should_receive(:clear).once
+      queue.save.should be_true
+      queue.should be_empty
+    end
   end
 
   context "at least one object in queue was not saved" do
@@ -96,7 +102,7 @@ describe SaveQueue::ObjectQueue do
 
     describe "#save!" do
       it "should set errors" do
-        expect {queue.save!}.to raise_error
+        queue.save! rescue nil
 
         queue.errors[:save].should_not be_empty
         queue.errors.should eq :save => { :processed  => @objects.values_at(:valid1, :valid2, :not_changed),
@@ -112,6 +118,16 @@ describe SaveQueue::ObjectQueue do
                                     :failed     => @objects[:unsaved_but_changed],
                                     :pending    => @objects.values_at(:not_changed, :saved, :valid3) }
         }
+      end
+
+      # TODO remove duplication
+      it "should not clear queue" do
+        queue.should_not_receive(:clear)
+        queue.save! rescue nil
+      end
+
+      it "should not remove/add elements from/to queue" do
+        expect { queue.save! rescue nil }.to_not change { queue.size }.to raise_error
       end
     end
 
@@ -132,6 +148,15 @@ describe SaveQueue::ObjectQueue do
       
       it "should not raise SaveQueue::FailedSaveError" do
         expect{  queue.save }.not_to raise_error(SaveQueue::FailedSaveError)
+      end
+
+      it "should not clear queue" do
+        queue.should_not_receive(:clear)
+        queue.save
+      end
+
+      it "should not remove/add elements from/to queue" do
+        expect { queue.save }.to_not change { queue.size }
       end
     end
 

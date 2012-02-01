@@ -65,7 +65,7 @@ module SaveQueue
 
         processed << object
       end
-      @queue.clear
+      clear
 
       run_hook :after_save
 
