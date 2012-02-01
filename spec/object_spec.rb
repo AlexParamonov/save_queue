@@ -155,8 +155,8 @@ describe SaveQueue::Object do
       object.save_queue.add other_object
       other_object.save_queue.add object
 
-      object.extend count_mod
-      other_object.extend count_mod
+      object.extend Count_mod
+      other_object.extend Count_mod
 
       other_object.save.should be_true
 
@@ -170,7 +170,7 @@ describe SaveQueue::Object do
       it "should save queue objects only once" do
         target = new_object
         target.mark_as_changed
-        target.extend count_mod
+        target.extend Count_mod
 
         object      .save_queue.add target
         other_object.save_queue.add target
@@ -244,14 +244,12 @@ describe SaveQueue::Object do
     end.new
   end
 
-  def count_mod
-    Module.new do
-      attr_reader :save_call_count
-      def save
-        @save_call_count ||= 0
-        @save_call_count += 1
-        super
-      end
+  module Count_mod
+    attr_reader :save_call_count
+    def save
+      @save_call_count ||= 0
+      @save_call_count += 1
+      super
     end
   end
 end

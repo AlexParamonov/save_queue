@@ -3,7 +3,7 @@ module SaveQueue
     module Notification
       module Object
         def self.included(base)
-          base.send :include, AddObserverToQueue unless base.include?(AddObserverToQueue)
+          base.send :include, AddObserverToQueue# unless base.include?(AddObserverToQueue)
         end
 
         def queue_changed_event(result, object)
