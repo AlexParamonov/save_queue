@@ -164,6 +164,27 @@ describe SaveQueue::Object do
       other_object.save_call_count.should == 1
             object.save_call_count.should == 1
     end
+
+    describe "multiple thread" do
+      pending "add tests for multithreading"
+      #it "should save queue object only once" do
+      #  #pending "test should fail, but it does not"
+      #
+      #  # TODO better ex needed
+      #  object.stub_chain(:save_queue, :save).once
+      #
+      #  thread1 = Thread.new(object) do |obj|
+      #    obj.save
+      #  end
+      #
+      #  thread2 = Thread.new(object) do |obj|
+      #    obj.save
+      #  end
+      #
+      #  thread1.join
+      #  thread2.join
+      #end
+    end
   end
 
   private
