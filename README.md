@@ -16,6 +16,7 @@ Contents
     * Tracking changes
     * Error handling
 1. Plugins
+    * Dirty
     * Validation
     * Notification
 1. Creating your own Queues / TODO
@@ -40,44 +41,31 @@ Usage
 
 ### Getting started
 
-1. include SaveQueue:
-
-        require 'save_queue'
-
-        class Artice
-          include SaveQueue
-        end
-
-2. call \#mark_as_changed method when object gets dirty:
+1. Include SaveQueue:
 
         require 'save_queue'
 
         class Artice
           include SaveQueue
 
-          def change_attribute attr, value
-            @attributes ||= {}
-            @attributes[attr] = value
-            mark_as_changed # call this and object will be marked for save
+          def save
+            puts "article saved!"
           end
         end
 
-3. add SaveQueue to some other classes (or implement #save and #has_unsaved_changes? in it):
+1. Add SaveQueue to some other classes (or implement #save method in it):
 
         require 'save_queue'
 
         class Tag
           include SaveQueue
 
-          def change_attribute attr, value
-            @attributes ||= {}
-            @attributes[attr] = value
-            mark_as_changed # call this and object will be marked for save
+          def save
+            puts "tag saved!"
           end
         end
 
-
-4. Add some functionality:
+1. Add some functionality:
 
         class Artice
           def tags=(tag_objects)
@@ -92,81 +80,53 @@ Usage
           end
         end
 
-6. Voila!
+1. Voila!
 
         article = Article.new
 
-        # Add collection
-        tag_objects = []
-        3.times do
-          tag = Tag.new
-          tag.change_attribute :title, "new tag"
-          tag.should_receive(:save).once # object in queue will be saved, because it attributes were changed
-          tag_objects << tag
-        end
-        
-        article.tags = tag_objects
+        # Create 3 tags and add them to the article
+        article.tags =
+          3.times.map do
+            tag = Tag.new
+            tag.should_receive(:save).once
 
-        # Add single element
+            tag
+          end
+
+        # Add single tag
         tag = Tag.new
-        tag.change_attribute :title, "single tag"
         tag.should_receive(:save).once
 
         article.add_tag tag
 
         # that will save article and all tags in this article if article.save
         # and all tag.save returns true.
-        # You may also use #save! method, that will trigger save_queue.save! and
+        # You may also use #save! method, that will delegate to article.save! and
         # raise SaveQueue::FailedSaveError on fail
         article.save.should be_true
+
+        # Output:
+        # article saved!
+        # tag saved!
+        # tag saved!
+        # tag saved!
+        # tag saved!
+
+        # empty the queue after successfull save
+        article.save_queue.should be_empty
+
+        article.save
+        # Output:
+        # article saved!
 
         # You may call save on queue explicitly:
         #
         # article.save_queue.save
         # article.save
 
-7. Read README for more details :)
+1. If you want to save an object _only_ if it was changed, take a look at Dirty module below.
 
-
-### Tracking changes
-By default SaveQueue provide changes tracking functional.
-In order to use it, call #mark_as_changed method in your mutator methods like this:
-
-    require "save_queue"
-    
-    class Artice
-      include SaveQueue
-
-      def change_attribute attr, value
-        @attributes[attr] = value
-        mark_as_changed # call this and object will be marked for save
-      end
-    end
-
-If you want to mark object as saved, you may use #mark_as_saved method. SaveQueue will automatically call #mark_as_saved
-after saving an object.
-This marks are used when SaveQueue calls #save. Object will be saved only, if it #has_unsaved_changes? returns true.
-There are some docs from spec tests:
-
-    #has_unsaved_changes?
-      should return true for changed object
-      should return false for unchanged object
-      should return false for new object
-
-If you have custom logic for marking objects dirty then you may want to overwrite
-\#has_unsaved_changes? method, methods #mark_as_saved and #mark_as_changed in you class like this:
-
-    def has_unsaved_changes?
-      dirty? # dirty is your custom method to determine has object unsaved_changes or not
-    end
-
-    def mark_as_saved
-      # your custom methods
-    end
-
-    def mark_as_changed
-      # your custom methods
-    end
+1. Read README for more details :)
 
 
 ### Error handling
@@ -204,6 +164,55 @@ SaveQueue assumes, that #save method returns true/false and #save! raise an Exce
 Plugins
 -------
 I am trying to extract any "extra" functionality into separate plugins, that you may want to include.
+
+### Dirty
+
+#### Tracking changes
+SaveQueue::Plugins::Dirty module provide changes tracking functional.
+In order to use it include this module and call #mark_as_changed method in your mutator methods like this:
+
+    require "save_queue"
+    require "save_queue/plugins/dirty"
+
+    class Artice
+      include SaveQueue
+      include SaveQueue::Plugins::Dirty
+
+      def initialize
+        @attributes = {}
+      end
+
+      def change_attribute attr, value
+        @attributes[attr] = value
+        mark_as_changed # call this and object will be marked for a save
+      end
+    end
+
+If you want to mark object as saved, you may use #mark_as_saved method. SaveQueue Dirty plugin will automatically call
+\#mark_as_saved method after saving an object.
+This marks are used when SaveQueue calls #save. Object will be saved only, if it #has_unsaved_changes? method returns true.
+There are some docs from spec tests:
+
+    #has_unsaved_changes?
+      should return true for changed object
+      should return false for unchanged object
+      should return false for new object
+
+If you have custom logic for marking objects dirty then you may want to overwrite
+\#has_unsaved_changes? method, methods #mark_as_saved and #mark_as_changed in you class like this:
+
+    def has_unsaved_changes?
+      dirty? # dirty is your custom method to determine has object unsaved_changes or not
+    end
+
+    def mark_as_saved
+      # your custom methods
+    end
+
+    def mark_as_changed
+      # your custom methods
+    end
+
 
 ### Validation
 
