@@ -6,8 +6,8 @@ module SaveQueue
           base.send :include, AddObserverToQueue
         end
 
-        def queue_changed_event(result, object)
-          mark_as_changed if result
+        def queue_changed_event(result, object, *args)
+
         end
 
         module AddObserverToQueue
