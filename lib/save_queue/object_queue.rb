@@ -17,7 +17,6 @@ module SaveQueue
     before_add :check_requirements
 
     # @return [Hash] save
-    # @option save [Array<Object>] :processed
     # @option save [Array<Object>] :saved
     # @option save [Object]        :failed
     # @option save [Array<Object>] :pending
@@ -50,17 +49,14 @@ module SaveQueue
 
       @errors = {}
       saved     = []
-      processed = []
 
       @queue.each do |object|
         if false == object.save
-          @errors[:save] = {:processed => processed, :saved => saved, :failed => object, :pending => @queue - (saved + [object])}
+          @errors[:save] = {:saved => saved, :failed => object, :pending => @queue - (saved + [object])}
           raise FailedSaveError, errors[:save]
         end
 
         saved << object
-
-        processed << object
       end
       clear
 

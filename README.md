@@ -177,7 +177,6 @@ SaveQueue assumes, that #save method returns true/false and #save! raise an Exce
       # You may use article.save_queue.errors.any? or article.save_queue.errors.empty? also
 
       # returns a [Hash] that contains information about saving proccess:
-      # @option [Array<Object>] :processed
       # @option [Array<Object>] :saved
       # @option [Object]        :failed
       # @option [Array<Object>] :pending
@@ -190,7 +189,6 @@ SaveQueue assumes, that #save method returns true/false and #save! raise an Exce
     rescue SaveQueue::FailedSaveError => error
 
       # returns a [Hash] that contains information about saving proccess:
-      # @option [Array<Object>] :processed
       # @option [Array<Object>] :saved
       # @option [Object]        :failed
       # @option [Array<Object>] :pending

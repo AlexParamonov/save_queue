@@ -70,16 +70,14 @@ describe SaveQueue::ObjectQueue do
         queue.save! rescue nil
 
         queue.errors[:save].should_not be_empty
-        queue.errors.should eq :save => { :processed  => @objects.values_at(:valid1, :valid2),
-                                          :saved      => @objects.values_at(:valid1, :valid2),
+        queue.errors.should eq :save => { :saved      => @objects.values_at(:valid1, :valid2),
                                           :failed     => @objects[:unsaved],
                                           :pending    => @objects.values_at(:saved, :valid3) }
       end
       
       it "should raise SaveQueue::FailedSaveError" do
         expect{  queue.save! }.to raise_error(SaveQueue::FailedSaveError) {|error| \
-          error.context.should == { :processed  => @objects.values_at(:valid1, :valid2),
-                                    :saved      => @objects.values_at(:valid1, :valid2),
+          error.context.should == { :saved      => @objects.values_at(:valid1, :valid2),
                                     :failed     => @objects[:unsaved],
                                     :pending    => @objects.values_at(:saved, :valid3) }
         }
@@ -105,8 +103,7 @@ describe SaveQueue::ObjectQueue do
         queue.save
 
         queue.errors[:save].should_not be_empty
-        queue.errors.should eq :save => { :processed  => @objects.values_at(:valid1, :valid2),
-                                          :saved      => @objects.values_at(:valid1, :valid2),
+        queue.errors.should eq :save => { :saved      => @objects.values_at(:valid1, :valid2),
                                           :failed     => @objects[:unsaved],
                                           :pending    => @objects.values_at(:saved, :valid3) }
       end
