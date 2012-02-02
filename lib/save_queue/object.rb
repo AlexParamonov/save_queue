@@ -61,11 +61,11 @@ module SaveQueue
     end
 
     def no_recursion
-      return true if @saving
-      @saving = true
+      return true if @_no_recursion_saving_flag
+      @_no_recursion_saving_flag = true
       yield
     ensure
-      @saving = false
+      @_no_recursion_saving_flag = false
     end
   end
 end
