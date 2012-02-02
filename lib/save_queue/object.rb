@@ -2,6 +2,8 @@ require 'save_queue/object_queue'
 
 module SaveQueue
   module Object
+    attr_reader :processed
+
     def self.included base
       base.send :extend, ClassMethods
     end
@@ -25,23 +27,41 @@ module SaveQueue
     module RunAlwaysFirst
       # can not reilly on save! here, because client may not define it at all
       def save(*args)
-        if defined?(super)
-          super_result = super
-          return false if false == super_result
+        no_recursion do
+          if has_unsaved_changes?
+            if defined?(super)
+              super_result = super
+              return false if false == super_result
+            end
+            mark_as_saved
+          end
+
+          return false unless save_queue.save
+
+          super_result || true
         end
-
-        mark_as_saved
-
-        return false unless save_queue.save
-
-        super_result || true
       end
 
+      # TODO squash with save method
       # Expect save! to raise an Exception if failed to save an object
       def save!
-        super if defined?(super)
-        mark_as_saved
-        save_queue.save!
+        no_recursion do
+          if has_unsaved_changes?
+            super if defined?(super)
+            mark_as_saved
+          end
+
+          save_queue.save!
+        end
+      end
+
+      private
+      def no_recursion
+        return true if @saving
+        @saving = true
+        yield
+      ensure
+        @saving = false
       end
     end
 

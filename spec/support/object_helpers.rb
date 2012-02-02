@@ -8,3 +8,9 @@ def new_class
 
   klass
 end
+
+def changed_object_for(klass)
+  object = klass.new
+  object.mark_as_changed
+  object
+end
