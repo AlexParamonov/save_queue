@@ -39,15 +39,6 @@ module SaveQueue
           save_queue.save!
         end
       end
-
-      private
-      def no_recursion
-        return true if @saving
-        @saving = true
-        yield
-      ensure
-        @saving = false
-      end
     end
 
     def initialize(*args)
@@ -79,6 +70,14 @@ module SaveQueue
     def create_queue
       # queue_class located in QueueClassManagement
       @_save_queue = self.class.queue_class.new
+    end
+
+    def no_recursion
+      return true if @saving
+      @saving = true
+      yield
+    ensure
+      @saving = false
     end
   end
 end
