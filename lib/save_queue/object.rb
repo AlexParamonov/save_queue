@@ -1,28 +1,13 @@
 require 'save_queue/object_queue'
+require 'save_queue/object/queue_class_management'
 
 module SaveQueue
   module Object
     attr_reader :processed
 
     def self.included base
-      base.send :extend, ClassMethods
+      base.send :extend, QueueClassManagement
     end
-    
-    module ClassMethods
-      def queue_class
-        @queue_class ||= ObjectQueue
-      end
-
-      def queue_class=(klass)
-        raise "Your Queue implementation: #{klass} should include Hooks module!" unless klass.include? Hooks
-        @queue_class = klass
-      end
-
-      def inherited base
-        base.queue_class = self.queue_class
-      end
-    end
-
 
     module RunAlwaysFirst
       # can not reilly on save! here, because client may not define it at all
@@ -92,6 +77,7 @@ module SaveQueue
 
     private
     def create_queue
+      # queue_class located in QueueClassManagement
       @_save_queue = self.class.queue_class.new
     end
   end
