@@ -91,7 +91,7 @@ describe SaveQueue::Object do
           expect{ object.save }.to change { object.save_called }.from(nil).to(true)
         end
 
-        it "call #save 5 time in a row should call super#save 5 times", :ci => false do
+        it "call #save 5 time in a row should call super#save 5 times" do
           object = new_count_object
 
           expect do

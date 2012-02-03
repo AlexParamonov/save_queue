@@ -5,7 +5,7 @@ class QueueWithNotification < SaveQueue::ObjectQueue
   include SaveQueue::Plugins::Notification::Queue
 end
 
-describe QueueWithNotification do
+describe SaveQueue::Plugins::Notification::Queue do
   let(:queue) { QueueWithNotification.new }
 
   ADD_METHODS.each do |method|

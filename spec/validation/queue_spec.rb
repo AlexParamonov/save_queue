@@ -6,7 +6,7 @@ class QueueWithValidation < SaveQueue::ObjectQueue
 end
 
 
-describe QueueWithValidation do
+describe SaveQueue::Plugins::Validation::Queue do
   let(:queue) { QueueWithValidation.new }
 
   context "is empty" do
