@@ -91,10 +91,12 @@ describe SaveQueue::Object do
           expect{ object.save }.to change { object.save_called }.from(nil).to(true)
         end
 
-        it "call #save 5 time in a row should call super#save 5 times" do
-          pending "Does not work on Travis CI for unknown reason. Locally passes."
+        it "call #save 5 time in a row should call super#save 5 times", :ci => false do
           object = new_count_object
-          (expect { 5.times { object.save } }).to((change { object.save_call_count }).from(0).to(5))
+
+          expect do
+            5.times { object.save }
+          end.to change { object.save_call_count }.from(0).to(5)
         end
 
         context "and it return false" do
@@ -162,32 +164,6 @@ describe SaveQueue::Object do
 
       other_object.save_call_count.should == 1
             object.save_call_count.should == 1
-    end
-  end
-
-  private
-  def object_that_return(value = nil, &block)
-    Class.new do
-      include SaveQueue::Object
-      s = block_given? ? block : lambda { value }
-      define_method :save, &s
-    end.new
-  end
-
-  def new_count_object
-    target_class = new_class
-    target_class.send :include, Count_mod
-    target_class.new
-  end
-
-  module Count_mod
-    def save_call_count
-      @save_call_count.to_i
-    end
-
-    def save
-      @save_call_count ||= 0
-      @save_call_count += 1
     end
   end
 end

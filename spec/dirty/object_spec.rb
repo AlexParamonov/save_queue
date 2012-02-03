@@ -197,27 +197,4 @@ describe SaveQueue::Plugins::Dirty::Object do
       end
     end
   end
-
-  private
-  def object_that_return(value = nil, &block)
-    Class.new do
-      include SaveQueue::Object
-      s = block_given? ? block : lambda { value }
-      define_method :save, &s
-    end.new
-  end
-
-  def new_count_object
-    target_class = new_class
-    target_class.send :include, Count_mod
-    target_class.new
-  end
-
-  module Count_mod
-    attr_reader :save_call_count
-    def save
-      @save_call_count ||= 0
-      @save_call_count += 1
-    end
-  end
 end
