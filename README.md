@@ -3,9 +3,16 @@ Save Queue
 [![Build Status](https://secure.travis-ci.org/AlexParamonov/save_queue.png)](http://travis-ci.org/AlexParamonov/save_queue)
 [![Gemnasium Build Status](https://gemnasium.com/AlexParamonov/save_queue.png)](http://gemnasium.com/AlexParamonov/save_queue)
 
-Save Queue allows to push objects to other object's queue for a delayed save.
-Queue save will be triggered by object#save.
+Save Queue creates queue of objects inside holder object.  
+Queue will be saved and cleared after successfull holder object save.   
+  
 
+**Holder object** is object that include SaveQueue.  
+**Object in queue** is any instance of any class, that include SaveQueue or respond to #save method.  
+
+
+There are plugins, that alter queue or holder object behavior, find them in 'save_queue/plugins' directory and read about
+them in Plugins section of [readme](https://github.com/AlexParamonov/save_queue/blob/develop/README.md)
 
 Contents
 ---------
@@ -13,9 +20,9 @@ Contents
 1. Contributing
 1. Usage
     * Getting started
-    * Tracking changes
     * Error handling
 1. Plugins
+    * Dirty
     * Validation
     * Notification
 1. Creating your own Queues / TODO
@@ -30,53 +37,42 @@ Installation
 
 Contributing
 -------------
-__Please help to improve this project!__
+**Please help to improve this project!**  
 
-See [contributing guide](http://github.com/AlexParamonov/save_queue/blob/master/CONTRIBUTING.md) for best practices
+
+See [contributing guide](http://github.com/AlexParamonov/save_queue/blob/master/CONTRIBUTING.md) for best practices  
+I am using [gitflow](https://github.com/nvie/gitflow). Develop branch is most featured and usually far above master.
 
 Usage
 -----
 
 ### Getting started
 
-1. include SaveQueue:
-
-        require 'save_queue'
-
-        class Artice
-          include SaveQueue
-        end
-
-2. call \#mark_as_changed method when object gets dirty:
+1. Include SaveQueue:
 
         require 'save_queue'
 
         class Artice
           include SaveQueue
 
-          def change_attribute attr, value
-            @attributes ||= {}
-            @attributes[attr] = value
-            mark_as_changed # call this and object will be marked for save
+          def save
+            puts "article saved!"
           end
         end
 
-3. add SaveQueue to some other classes (or implement #save and #has_unsaved_changes? in it):
+1. Add SaveQueue to some other classes (or implement #save method in it):
 
         require 'save_queue'
 
         class Tag
           include SaveQueue
 
-          def change_attribute attr, value
-            @attributes ||= {}
-            @attributes[attr] = value
-            mark_as_changed # call this and object will be marked for save
+          def save
+            puts "tag saved!"
           end
         end
 
-
-4. Add some functionality:
+1. Add some functionality:
 
         class Artice
           def tags=(tag_objects)
@@ -87,64 +83,120 @@ Usage
           def add_tag(tag)
             @tags ||= []
             @tags << tag
-            save_queue.add tag # you may use also #<<, #push methods
+            save_queue.add tag # methods #<<, #push can be also used to add object to queue
+            # You may also do
+            # tag.save_queue << self
+            # save_queue will not circle in this case
           end
         end
 
-6. Voila!
+1. Voila!
 
         article = Article.new
 
-        # Add collection
-        tag_objects = []
-        3.times do
-          tag = Tag.new
-          tag.change_attribute :title, "new tag"
-          tag.should_receive(:save).once # object in queue will be saved, because it attributes were changed
-          tag_objects << tag
-        end
-        
-        article.tags = tag_objects
+        # Create 3 tags and add them to the article
+        article.tags =
+          3.times.map do
+            tag = Tag.new
+            tag.should_receive(:save).once
 
-        # Add single element
+            tag
+          end
+
+        # Add single tag
         tag = Tag.new
-        tag.change_attribute :title, "single tag"
         tag.should_receive(:save).once
 
         article.add_tag tag
 
         # that will save article and all tags in this article if article.save
         # and all tag.save returns true.
-        # You may also use #save! method, that will trigger save_queue.save! and
+        # You may also use #save! method, that will delegate to article.save! and
         # raise SaveQueue::FailedSaveError on fail
         article.save.should be_true
+
+        # Output:
+        # article saved!
+        # tag saved!
+        # tag saved!
+        # tag saved!
+        # tag saved!
+
+        # empty the queue after successfull save
+        article.save_queue.should be_empty
+
+        article.save
+        # Output:
+        # article saved!
 
         # You may call save on queue explicitly:
         #
         # article.save_queue.save
         # article.save
 
-7. Read README for more details :)
+1. To save object _only_ if it was changed, include Dirty module described below.
+
+1. Continue reading for more details.
+
+### Error handling
+
+SaveQueue assumes, that #save method returns true/false and #save! raise an Exception if save failed:
+
+    unless article.save
+      # You may use article.save_queue.errors.any? or article.save_queue.errors.empty? also
+
+      # returns a [Hash] that contains information about saving proccess:
+      # @option [Array<Object>] :saved
+      # @option [Object]        :failed
+      # @option [Array<Object>] :pending
+      article.save_queue.errors[:save]
+    end
 
 
-### Tracking changes
-By default SaveQueue provide changes tracking functional.
-In order to use it, call #mark_as_changed method in your mutator methods like this:
+    begin
+      article.save!
+    rescue SaveQueue::FailedSaveError => error
+
+      # returns a [Hash] that contains information about saving proccess:
+      # @option [Array<Object>] :saved
+      # @option [Object]        :failed
+      # @option [Array<Object>] :pending
+      error.context
+
+      article.save_queue.errors[:save] # also set
+    end
+
+Queue is not cleared after fail. Possible to fix errors and rerun queue.save
+
+Plugins
+-------
+Any extract any "extra" functionality goes into bundled plugins.
+
+### Dirty
+
+SaveQueue::Plugins::Dirty module provide changes tracking functional.  
+In order to use it include this module and call #mark_as_changed method in mutator methods like this:
 
     require "save_queue"
-    
+    require "save_queue/plugins/dirty"
+
     class Artice
       include SaveQueue
+      include SaveQueue::Plugins::Dirty
+
+      def initialize
+        @attributes = {}
+      end
 
       def change_attribute attr, value
         @attributes[attr] = value
-        mark_as_changed # call this and object will be marked for save
+        mark_as_changed # call this and object will be marked for a save
       end
     end
 
-If you want to mark object as saved, you may use #mark_as_saved method. SaveQueue will automatically call #mark_as_saved
-after saving an object.
-This marks are used when SaveQueue calls #save. Object will be saved only, if it #has_unsaved_changes? returns true.
+To mark object as saved, call #mark_as_saved method. SaveQueue Dirty plugin will automatically call
+\#mark_as_saved method after saving an object.  
+This marks are used when SaveQueue calls #save. Object will be saved only, if it #has_unsaved_changes? method returns true.
 There are some docs from spec tests:
 
     #has_unsaved_changes?
@@ -168,46 +220,10 @@ If you have custom logic for marking objects dirty then you may want to overwrit
     end
 
 
-### Error handling
-
-SaveQueue assumes, that #save method returns true/false and #save! raise an Exception if save failed:
-
-    unless article.save
-      # You may use article.save_queue.errors.any? or article.save_queue.errors.empty? also
-
-      # returns a [Hash] that contains information about saving proccess:
-      # @option [Array<Object>] :processed
-      # @option [Array<Object>] :saved
-      # @option [Object]        :failed
-      # @option [Array<Object>] :pending
-      article.save_queue.errors[:save]
-    end
-
-
-    begin
-      article.save!
-    rescue SaveQueue::FailedSaveError => error
-
-      # returns a [Hash] that contains information about saving proccess:
-      # @option [Array<Object>] :processed
-      # @option [Array<Object>] :saved
-      # @option [Object]        :failed
-      # @option [Array<Object>] :pending
-      error.context
-
-      article.save_queue.errors[:save] # also set
-    end
-
-
-
-Plugins
--------
-I am trying to extract any "extra" functionality into separate plugins, that you may want to include.
-
 ### Validation
 
-If you want to use validation, include SaveQueue::Plugins::Validation and implement #valid? method.
-You may got failed objects from save_queue.errors\[:validation] array.
+To use validation include SaveQueue::Plugins::Validation and implement #valid? method.  
+Failed objects are stored in save_queue.errors\[:validation] array.  
 \save_queue.errors are empty if no errors occurs
 
     require 'save_queue'
@@ -227,25 +243,58 @@ You may got failed objects from save_queue.errors\[:validation] array.
 
 There are specs for them:
 
-    ValidQueue
+    SaveQueue::Plugins::Validation::Queue
+      is empty
+        should be valid
+        #save
+          should be true
+        #save!
+          should not raise Exception
       contains valid objects
         #save
-          should save all of them
-          should not has any errors
+          should be true
+          should save all elements
         #save!
-          should save all of them
+          should not raise Exception
+          should save all elements
+        #valid?
+          should be true
+          should not has any errors
+        #validate!
           should not raise any exception
           should not has any errors
       contains invalid objects
-        #save
-          should not save them
-          should set errors
-        #save!
-          should not save them
-          should raise SaveQueue::FailedValidationError exception
-          should set errors
+        behaves like queue with invalid objects
+          #save
+            should be false
+            should not save elements
+          #save!
+            should raise SaveQueue::FailedValidationError
+            should not save elements
+          #valid?
+            should be false
+            should set errors
+          #validate!
+            should raise SaveQueue::FailedValidationError exception
+            should set errors
+      contains mix of valid and invalid objects
+        #save should call #valid?
+        #save! should call #validate!
+        behaves like queue with invalid objects
+          #save
+            should be false
+            should not save elements
+          #save!
+            should raise SaveQueue::FailedValidationError
+            should not save elements
+          #valid?
+            should be false
+            should set errors
+          #validate!
+            should raise SaveQueue::FailedValidationError exception
+            should set errors
 
-Also you got more error hangling options:
+Plugin adds SaveQueue::FailedValidationError:
 
     # Note: queue was not saved. You dont need to do a cleanup
     unless article.save then
@@ -261,7 +310,7 @@ Also you got more error hangling options:
       article.save_queue.errors[:validation] # also set
     end
 
-You may catch both save and validation errors by
+To catch both save and validation errors use SaveQueue::Error:
 
     begin
       article.save!
@@ -269,21 +318,22 @@ You may catch both save and validation errors by
       # do something
     end
 
-if you want not to save an object if save_queue is invalid then add this check to your save method (or any other method that you use, ex: valid?):
+To not save an object if save_queue is invalid, add this condition to #save method:
 
     def save
       return false unless save_queue.valid?
       #..
     end
 
-or you may add it to your validation.
-Note, that #valid? and #validate return true/false and #validate! raises SaveQueue::FailedValidationError exception
+or add it to validation (to object#valid? method for example).  
+Note, that queue#valid? and queue#validate return true/false and queue#validate! raises SaveQueue::FailedValidationError exception.
+Queue is not creared if validation fails.
 
 ### Notification
 
-If you want to use notification, include SaveQueue::Plugins::Notification.
-You'll get object notified by #queue_changed_event method, which by default call #mark_as_changed method if queue was successfuly changed.
-You may overwrite this method in your object if you want to.
+To use notification include SaveQueue::Plugins::Notification.  
+Holder object will be notified by #queue_changed_event method.  
+Overwrite this method to implement your functionality, for ex logging.
 
     require 'save_queue/plugins/notification'
 
@@ -293,21 +343,17 @@ You may overwrite this method in your object if you want to.
     end
 
     article = Article.new
-    article.mark_as_saved
-    article.save_queue << tag # this will trigger callback, that will mark article as changed
-    article.should have_unsaved_changes
+    article.save_queue << tag # this will trigger callback #queue_changed_event on article
+
 
     class Artice
       def queue_changed_event(result, object)
-        super
         puts "queue was changed!"
       end
     end
 
     article = Article.new
-    article.mark_as_saved
-    article.save_queue << tag # "queue was changed!"
-    article.should have_unsaved changes
+    article.save_queue.add tag # Outputs "queue was changed!"
 
 
 Creating your own Queues
@@ -318,9 +364,8 @@ Creating your own Queues
 FAQ
 ---
 
-__Q: I use #write method to store object, how can i use SaveQueue?__
-
-A: You may implement save method like this:
+__Q: I use #write method to store object, how can i use SaveQueue?__  
+A: You may implement #save method like this:
 
     class Artice
       # @return [boolean]
@@ -329,14 +374,12 @@ A: You may implement save method like this:
       end
     end
 
-Note that SaveQueue assumes, that #save method returns true/false and #save! raise an Exception if save failed
+Note that SaveQueue assumes, that #save method returns true/false and #save! raise an Exception if save failed.
 
-__Q: Where i can get more information?__
 
-A: See test specs for more details.
-
-__How?__
-
+__Q: Where i can get more information?__  
+A: See test specs for more details.  
+__How?__  
 clone git project by
 
     git clone git://github.com/AlexParamonov/save_queue.git
@@ -346,10 +389,11 @@ cd into it and run bundle
     cd save_queue
     bundle
 
-and run rake
+and then rake
 
     rake
 
+docs will be printed to your console :)
 
 Requirements
 ------------
@@ -365,6 +409,7 @@ tested with Ruby
 * 1.9.2
 * 1.9.3
 * jruby-18mode
+* jruby-19mode
 * rbx-19mode
 * rbx-18mode
 * ruby-head

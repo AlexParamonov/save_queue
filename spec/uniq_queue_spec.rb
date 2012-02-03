@@ -52,7 +52,8 @@ describe SaveQueue::UniqQueue do
     end
   end
 
-  [:add, :push].each do |add_method|
+  # TODO is that clear? is refactoring needed here?
+  (ADD_METHODS - %w(<<)).each do |add_method|
     describe "##{add_method}" do
       let(:method) { add_method }
       it_behaves_like "add method"
@@ -93,6 +94,12 @@ describe SaveQueue::UniqQueue do
     it "should delegate to #add" do
       queue.should_receive(:add).exactly(3).times
       queue.add_all [1,2,3]
+    end
+
+    context "not array object passed as parameter" do
+      it_behaves_like "add method" do
+        let(:method) { "add" }
+      end
     end
 
     it "should act as #add if single argument passed" do

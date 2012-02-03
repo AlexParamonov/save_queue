@@ -17,7 +17,6 @@ module SaveQueue
     before_add :check_requirements
 
     # @return [Hash] save
-    # @option save [Array<Object>] :processed
     # @option save [Array<Object>] :saved
     # @option save [Object]        :failed
     # @option save [Array<Object>] :pending
@@ -50,22 +49,16 @@ module SaveQueue
 
       @errors = {}
       saved     = []
-      processed = []
 
       @queue.each do |object|
-        if object.has_unsaved_changes?
+        if false == object.save
+          @errors[:save] = {:saved => saved, :failed => object, :pending => @queue - (saved + [object])}
+          raise FailedSaveError, errors[:save]
+        end
 
-          if false == object.save
-            @errors[:save] = {:processed => processed, :saved => saved, :failed => object, :pending => @queue - (saved + [object])}
-            raise FailedSaveError, errors[:save]
-          end
-
-          saved << object
-        end # object.has_unsaved_changes?
-
-        processed << object
+        saved << object
       end
-      @queue.clear
+      clear
 
       run_hook :after_save
 
@@ -74,7 +67,7 @@ module SaveQueue
 
     private
     def check_requirements(object)
-      [:save, :has_unsaved_changes?].each do |method|
+      [:save].each do |method|
         raise ArgumentError, "#{object.inspect} does not respond to ##{method}" unless object.respond_to? method
       end
     end

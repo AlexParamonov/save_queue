@@ -5,7 +5,7 @@ module SaveQueue
     module Validation
       module Queue
         def self.included base
-          base.before_save :validate! #if base.respond_to? :before_save
+          base.before_save :validate!
         end
 
         def valid?

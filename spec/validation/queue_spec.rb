@@ -1,13 +1,25 @@
 require "spec_helper"
 require "save_queue/plugins/validation/queue"
 
-class ValidQueue < SaveQueue::ObjectQueue
+class QueueWithValidation < SaveQueue::ObjectQueue
   include SaveQueue::Plugins::Validation::Queue
 end
 
 
-describe ValidQueue do
-  let(:queue) { ValidQueue.new }
+describe SaveQueue::Plugins::Validation::Queue do
+  let(:queue) { QueueWithValidation.new }
+
+  context "is empty" do
+    specify { queue.should be_valid }
+
+    describe "#save" do
+      specify { queue.save.should be_true }
+    end
+
+    describe "#save!" do
+      specify { expect { queue.save! }.to_not raise_error }
+    end
+  end
 
   context "contains valid objects" do
     let(:valid_objects) do
@@ -21,80 +33,119 @@ describe ValidQueue do
     end
 
     describe "#save" do
-      it "should save all of them" do
+      specify { queue.save.should be_true }
+      
+      it "should save all elements" do
         valid_objects.each{|o| o.should_receive(:save).once}
         queue.save.should be_true
-      end
-
-      it "should not has any errors" do
-        queue.save.should be_true
-        queue.errors.should be_empty
       end
     end
 
     describe "#save!" do
-      it "should save all of them" do
+      specify { expect { queue.save! }.to_not raise_error }
+      
+      it "should save all elements" do
         valid_objects.each{|o| o.should_receive(:save).once}
         queue.save!
       end
+    end
 
+    describe "#valid?" do
+      specify {queue.valid?.should be_true}
+
+      it "should not has any errors" do
+        queue.valid?
+        queue.errors.should be_empty
+      end
+    end
+
+    describe "#validate!" do
       it "should not raise any exception" do
-        expect { queue.save! }.not_to raise_error
+        expect { queue.validate! }.not_to raise_error
       end
 
       it "should not has any errors" do
-        queue.save!
+        queue.validate!
         queue.errors.should be_empty
       end
     end
   end
 
-
-  describe "contains invalid objects" do
-    let(:invalid_objects) do
-      3.times.map do
-        new_velement(:valid => false)
-      end
-    end
-
+  shared_context "queue with invalid objects" do
     before(:each) do
-      queue.add_all invalid_objects
+      queue.add_all objects
     end
 
     describe "#save" do
-      it "should not save them" do
-        invalid_objects.each{|o| o.should_not_receive(:save)}
+      specify { queue.save.should be_false }
+      
+      it "should not save elements" do
+        objects.each{|o| o.should_not_receive(:save)}
         queue.save.should be_false
-      end
-
-      it "should set errors" do
-        queue.save.should be_false
-        queue.errors[:validation].should_not be_empty
       end
     end
 
     describe "#save!" do
-      it "should not save them" do
-        invalid_objects.each do |o|
+      specify { expect {queue.save!}.to raise_error(SaveQueue::FailedValidationError) }
+      
+      it "should not save elements" do
+        objects.each do |o|
           o.as_null_object
           o.should_not_receive(:save)
         end
-
-        expect {queue.save!}.to raise_error
       end
+    end
 
+    describe "#valid?" do
+      specify {queue.valid?.should be_false}
+
+      it "should set errors" do
+        queue.valid?
+        queue.errors[:validation].should_not be_empty
+      end
+    end
+
+    describe "#validate!" do
       it "should raise SaveQueue::FailedValidationError exception" do
-        expect { queue.save! }.to raise_error(SaveQueue::FailedValidationError)
+        expect { queue.validate! }.to raise_error(SaveQueue::FailedValidationError)
       end
 
       it "should set errors" do
-        expect{queue.save!}.to raise_error
+        expect{queue.validate!}.to raise_error
         queue.errors[:validation].should_not be_empty
+      end
+    end
+
+  end
+
+  context "contains invalid objects" do
+    it_behaves_like "queue with invalid objects" do
+      let(:objects) do
+        3.times.map { new_velement(:valid => false) }
       end
     end
   end
 
+  context"contains mix of valid and invalid objects" do
+    it_behaves_like "queue with invalid objects" do
+      let(:objects) do
+        2.times.map do
+          new_velement(:valid => true)
+          new_velement(:valid => false)
+        end
+      end
+    end
 
+    it "#save should call #valid?" do
+      queue.should_receive(:valid?)
+      queue.save
+    end
+
+    it "#save! should call #validate!" do
+      queue.should_receive(:validate!)
+      queue.save!
+    end
+  end
   #before(:each) do
   #  @invalid = new_object
   #  @invalid.stub(:valid?).and_return(false)

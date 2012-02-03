@@ -1,14 +1,14 @@
 require "spec_helper"
 require "save_queue/plugins/notification/queue"
 
-class NotifyQueue < SaveQueue::ObjectQueue
+class QueueWithNotification < SaveQueue::ObjectQueue
   include SaveQueue::Plugins::Notification::Queue
 end
 
 describe SaveQueue::Plugins::Notification::Queue do
-  let(:queue) { NotifyQueue.new }
+  let(:queue) { QueueWithNotification.new }
 
-  [:add, :<<, :push].each do |method|
+  ADD_METHODS.each do |method|
     describe "##{method}" do
       let(:element) { new_element }
       
@@ -18,7 +18,7 @@ describe SaveQueue::Plugins::Notification::Queue do
         queue.send method, element
       end
 
-      it "should notify observer, provided result of a method call and input object" do
+      it "should provide input params and result of ##{method} method call to observers" do
         queue.should_receive(:changed)
         queue.should_receive(:notify_observers).with(true, element)
         queue.send method, element

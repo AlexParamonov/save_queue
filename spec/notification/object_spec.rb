@@ -34,21 +34,4 @@ describe SaveQueue::Plugins::Notification::Object do
     NotifyObject.queue_class = queue
     expect { NotifyObject.new }.to_not raise_error
   end
-  
-  describe "#queue_changed_event" do
-    let(:object) do
-      NotifyObject.any_instance.stub(:create_queue)
-      NotifyObject.new
-    end
-
-    it "should mark self as changed" do
-      object.should_receive(:mark_as_changed)
-      object.send :queue_changed_event, true, stub(:some_object)
-    end
-    
-    it "should not mark self as changed if result of adding element to a queue was false" do
-      object.should_not_receive(:mark_as_changed)
-      object.send :queue_changed_event, false, stub(:some_object)
-    end
-  end
 end

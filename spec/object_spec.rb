@@ -4,205 +4,166 @@ require "save_queue/object"
 describe SaveQueue::Object do
   let(:object) { new_object }
 
-  describe "#has_unsaved_changes?" do
-    it "should return true for changed object" do
-      object.mark_as_changed
-      object.should have_unsaved_changes
-    end
-
-    it "should return false for unchanged object" do
-      object.mark_as_saved
-      object.should_not have_unsaved_changes
-    end
-
-    it "should return false for new object" do
-      klass = Class.new
-      klass.send :include, SaveQueue::Object
-
-      klass.new.should_not have_unsaved_changes
-    end
-  end
-
-  describe "marks" do
-    it "should change state of an object" do
-      object.mark_as_saved
-      object.should_not have_unsaved_changes
-      object.mark_as_changed
-      object.should have_unsaved_changes
-      object.mark_as_saved
-      object.should_not have_unsaved_changes
-    end
-  end
-
   describe "#save!" do
-    it "should delegate to save" do
-      object.save_queue.should_receive(:save!).once
-      object.save!
+    context "object" do
+      it "should call #save! on queue" do
+        object.save_queue.should_receive(:save!).once
+        object.save!
+      end
+
+      context "original class has #save! method defined" do
+        it "should call that method" do
+          object =
+            Class.new do
+              include SaveQueue::Object
+              attr_reader :save_called
+              def save!
+                @save_called = true
+              end
+            end.new
+
+          expect{ object.save! }.to change { object.save_called }.from(nil).to(true)
+        end
+
+        #it "call #save! 5 time in a row should call super#save! 5 times" do
+        #  object = new_count_object
+        #  expect do
+        #    5.times { object.save }
+        #  end.to change { object.save_call_count }.from(0).to(5)
+        #end
+
+        context "and it raises an Exception" do
+          let(:object) do
+            Class.new do
+              include SaveQueue::Object
+              def save!
+                raise RuntimeError
+              end
+            end.new
+          end
+
+          it "should raise an Exception" do
+            expect{ object.save! }.to raise_error(RuntimeError)
+          end
+
+          it "should not save queue" do
+            object.save_queue.should_not_receive(:save)
+            object.save! rescue nil
+          end
+        end
+      end
     end
+
+    #it "should not circle" do
+    #  object       = new_count_object
+    #  other_object = new_count_object
+    #
+    #  object.save_queue.add other_object
+    #  other_object.save_queue.add object
+    #
+    #  other_object.save.should be_true
+    #
+    #  other_object.save_call_count.should == 1
+    #        object.save_call_count.should == 1
+    #end
+
   end
 
   describe "#save" do
-    it "should save queue" do
-      object.save_queue.should_receive(:save).once
-      object.save
-    end
 
-    it "should save itself" do
-      klass = Class.new do
-        def save
-          "saved!"
-        end
-      end
-
-      klass.send :include, SaveQueue::Object
-      klass.new.save.should == "saved!"
-    end
-
-    context "object could not be saved" do
-      let(:object) do
-        klass = Class.new do
-          def save
-            false
-          end
-        end
-        klass.send :include, SaveQueue::Object
-        klass.new
-      end
-      
-      it "should return false" do
-        object.save.should == false
-      end
-
-      it "should not save queue" do
-        object.save_queue.should_not_receive(:save)
+    context "object" do
+      it "should save queue" do
+        object.save_queue.should_receive(:save).once
         object.save
       end
-    end
 
-    
-    it "should not circle" do
-      other_object = new_object
+      context "original class has #save method defined" do
+        it "should call that method (save object)" do
+          object =
+            Class.new do
+              include SaveQueue::Object
+              attr_reader :save_called
+              def save
+                @save_called = true
+              end
+            end.new
 
-      object.mark_as_changed
-      other_object.mark_as_changed
-
-
-      object      .save_queue.add other_object
-      other_object.save_queue.add object
-
-      $object_counter = mock :counter
-      $object_counter.should_receive(:increment).once
-
-      def object.save
-        result = super
-        $object_counter.increment
-
-        result
-      end
-
-      $other_object_counter = mock :counter
-      $other_object_counter.should_receive(:increment).once
-
-      def other_object.save
-        result = super
-        $other_object_counter.increment
-
-        result
-      end
-
-      #object.should_receive(:save).once.and_return(true)
-      #@base.should_receive(:save).once.and_return(true)
-      other_object.save.should be_true
-    end
-
-    describe "multiple queues" do
-      let(:other_object) { new_object }
-
-      it "should save object only once" do
-        target = new_object
-        target.mark_as_changed
-
-        object      .save_queue.add target
-        other_object.save_queue.add target
-
-        $counter = mock :counter
-        $counter.should_receive(:increment).once
-
-        def target.save
-          result = super
-          $counter.increment
-
-          result
+          expect{ object.save }.to change { object.save_called }.from(nil).to(true)
         end
 
-        #target.should_receive(:save).once.and_return(true)
-        object.save.should be_true
-        other_object.save.should be_true
+        it "call #save 5 time in a row should call super#save 5 times" do
+          object = new_count_object
+
+          expect do
+            5.times { object.save }
+          end.to change { object.save_call_count }.from(0).to(5)
+        end
+
+        context "and it return false" do
+          let(:object) { object_that_return(false) }
+
+          it "should return false" do
+            object.save.should be_false
+          end
+
+          it "should not save queue" do
+            object.save_queue.should_not_receive(:save)
+            object.save
+          end
+        end
+
+        context "and it return true" do
+          let(:object) { object_that_return(true) }
+
+          it "should return true if queue saved successfully" do
+            object.save.should be_true
+          end
+
+          it "should return false if queue not saved successfully" do
+            object.save_queue.stub(:save => false)
+            object.save.should be_false
+          end
+        end
+
+        context "and it return nil" do
+          let(:object) { object_that_return(nil) }
+
+          it "should return true if queue saved successfully" do
+            object.save.should eq true
+          end
+
+          it "should return false if queue not saved successfully" do
+            object.save_queue.stub(:save => false)
+            object.save.should eq false
+          end
+        end
+
+        context "and it return not a boolean value" do
+          let(:object) { object_that_return("some string") }
+
+          it "should return object#save result if queue saved successfully" do
+            object.save.should == "some string"
+          end
+
+          it "should return false if queue not saved successfully" do
+            object.save_queue.stub(:save => false)
+            object.save.should eq false
+          end
+        end
       end
     end
-  end
 
-  describe "queue" do
-    let(:queue_class)       { Class.new(SaveQueue::ObjectQueue) }
-    let(:other_queue_class) { Class.new(SaveQueue::ObjectQueue) }
+    it "should not circle" do
+      object       = new_count_object
+      other_object = new_count_object
 
-    it "should mapped to SaveQueue::ObjectQueue by default" do
-      klass = new_class
-      klass.queue_class.should be SaveQueue::ObjectQueue
-    end
+      object.save_queue.add other_object
+      other_object.save_queue.add object
 
-    describe "queue class change" do
-      it "before initialization should be possible" do
-        klass = new_class
-        klass.queue_class = other_queue_class
-        klass.new.save_queue.should be_kind_of other_queue_class
-      end
+      other_object.save.should be_true
 
-      it "after initialization should not affect already created queue" do
-        klass = new_class
-        klass.queue_class = queue_class
-        object = klass.new
-        
-        object.save_queue.should     be_a       queue_class
-        object.class.queue_class     =          other_queue_class
-        object.save_queue.should_not be_kind_of other_queue_class
-        object.save_queue.should     be_a       queue_class
-      end
-
-      it "should check dependencies for Hooks module" do
-        klass = new_class
-        expect{ klass.queue_class = Class.new }.to raise_error(RuntimeError, /Hooks/)
-      end
-    end
-
-    describe "inheritance" do
-      let(:klass)             { new_class }
-      
-      it "should inherit settings of parent class" do
-        klass.queue_class = queue_class
-
-        child = Class.new(klass)
-        child.queue_class.should == queue_class
-      end
-
-      it "should not override settings of parent class" do
-        klass.queue_class = queue_class
-
-        child = Class.new(klass)
-        child.queue_class = other_queue_class
-        child.queue_class.should == other_queue_class
-
-        klass.queue_class.should == queue_class
-      end
-
-
-      it "include SaveQueue::Object should not override settings of parent class" do
-        klass.queue_class = queue_class
-
-        child = Class.new(klass)
-        child.send :include, SaveQueue::Object
-        child.queue_class.should == queue_class
-      end
+      other_object.save_call_count.should == 1
+            object.save_call_count.should == 1
     end
   end
 end

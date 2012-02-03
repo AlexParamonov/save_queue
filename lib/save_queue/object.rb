@@ -1,49 +1,40 @@
 require 'save_queue/object_queue'
+require 'save_queue/object/queue_class_management'
 
 module SaveQueue
   module Object
+    attr_reader :processed
+
     def self.included base
-      base.class_eval do
-
-        class<<self
-          attr_reader :queue_class
-
-          def queue_class=(klass)
-            raise "Your Queue implementation: #{klass} should include Hooks module!" unless klass.include? Hooks
-            @queue_class = klass
-          end
-        end
-
-        def self.inherited base
-          base.queue_class = self.queue_class
-        end
-
-        self.queue_class ||= ObjectQueue
-      end
+      base.send :extend, QueueClassManagement
     end
-
 
     module RunAlwaysFirst
       # can not reilly on save! here, because client may not define it at all
       def save(*args)
-        super_result = true
-        super_result = super if defined?(super)
+        no_recursion do
+          super_result =
+            _sq_around_original_save do
+              super if defined?(super)
+            end
 
-        return false unless !!super_result
+          return false if false == super_result
+          return false unless save_queue.save
 
-        mark_as_saved
-        if save_queue.save
-          true == super_result ? true : super_result # super_result may be not boolean, String for ex
-        else
-          false
+          super_result || true
         end
       end
 
-      # Suppose,that save! raise an Exception if failed to save an object
+      # TODO squash with save method
+      # Expect save! to raise an Exception if failed to save an object
       def save!
-        super if defined?(super)
-        mark_as_saved
-        save_queue.save!
+        no_recursion do
+          _sq_around_original_save do
+            super if defined?(super)
+          end
+
+          save_queue.save!
+        end
       end
     end
 
@@ -55,29 +46,26 @@ module SaveQueue
       extend RunAlwaysFirst
     end
 
-    def mark_as_changed
-      instance_variable_set "@_changed_mark", true
-    end
-
-    # @returns [Boolean] true if object has been modified
-    def has_unsaved_changes?
-      status = instance_variable_get("@_changed_mark")
-      status.nil? ? false : status
-    end
-
     def save_queue
-      instance_variable_get "@_save_queue"
-    end
-
-    def mark_as_saved
-      instance_variable_set "@_changed_mark", false
+      @_save_queue
     end
 
     private
     def create_queue
-      klass = self.class.queue_class
-      queue = klass.new
-      instance_variable_set "@_save_queue", queue
+      # queue_class located in QueueClassManagement
+      @_save_queue = self.class.queue_class.new
+    end
+
+    def _sq_around_original_save
+      yield
+    end
+
+    def no_recursion
+      return true if @_no_recursion_saving_flag
+      @_no_recursion_saving_flag = true
+      yield
+    ensure
+      @_no_recursion_saving_flag = false
     end
   end
 end

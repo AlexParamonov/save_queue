@@ -9,8 +9,8 @@ module SaveQueue
     module Notification
       module Queue
         def self.included base
-          base.send :include, Observable unless base.include? Observable
-          base.after_add :change_and_notify # if base.respond_to? :after_add
+          base.send :include, Observable
+          base.after_add :change_and_notify
         end
 
         private
