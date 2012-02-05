@@ -134,7 +134,7 @@ Usage
         # article.save_queue.save
         # article.save
 
-1. To save object _only_ if it was changed, include Dirty module described below.
+1. To save object _only_ if it was changed, include Dirty module described below in plugins section.
 
 1. Continue reading for more details.
 
@@ -170,7 +170,7 @@ Queue is not cleared after fail. Possible to fix errors and rerun queue.save
 
 Plugins
 -------
-Any extract any "extra" functionality goes into bundled plugins.
+Any "extra" functionality goes into bundled plugins.
 
 ### Dirty
 
@@ -195,8 +195,8 @@ In order to use it include this module and call #mark_as_changed method in mutat
     end
 
 To mark object as saved, call #mark_as_saved method. SaveQueue Dirty plugin will automatically call
-\#mark_as_saved method after saving an object.  
-This marks are used when SaveQueue calls #save. Object will be saved only, if it #has_unsaved_changes? method returns true.
+\#mark_as_saved method after saving an object. This marks are used when SaveQueue calls #save.  
+Object will be saved only, if it #has_unsaved_changes? method returns true.
 There are some docs from spec tests:
 
     #has_unsaved_changes?
@@ -224,7 +224,7 @@ If you have custom logic for marking objects dirty then you may want to overwrit
 
 To use validation include SaveQueue::Plugins::Validation and implement #valid? method.  
 Failed objects are stored in save_queue.errors\[:validation] array.  
-\save_queue.errors are empty if no errors occurs
+save_queue.errors are empty if no errors occurs
 
     require 'save_queue'
     require 'save_queue/plugins/validation'
@@ -298,7 +298,7 @@ Plugin adds SaveQueue::FailedValidationError:
 
     # Note: queue was not saved. You dont need to do a cleanup
     unless article.save then
-      failed_objects = article.errors[:validation]
+      failed_objects = article.save_queue.errors[:validation]
     end
 
     begin
