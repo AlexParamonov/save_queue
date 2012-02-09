@@ -67,7 +67,7 @@ See the Github guide on creating forks for more details.
 Git branches are “cheap.” Creating branches in Git is incredibly easy and its an ideal way to isolate a specific set
  of changes. You may be fixing several things at one time but by keeping your changes isolated it will help us to
  find and apply only the changes we’re interested in. You should create a clean branch based on the latest
- save_queue/master when doing this. It is important you follow these steps exactly,
+ save_queue/develop when doing this. It is important you follow these steps exactly,
  it will prevent you from accidentally including unrelated changes from your local repository into the branch.
 
 For example, if we were submitting a patch to fix an issue with the CSS in the flash error message you could create
@@ -75,11 +75,11 @@ For example, if we were submitting a patch to fix an issue with the CSS in the f
 
     $ git remote add upstream git://github.com/AlexParamonov/save_queue.git
     $ git fetch upstream
-    $ git checkout -b fix-css-for-error-flash --track upstream/master
+    $ git checkout -b fix-css-for-error-flash --track upstream/develop
 
-The fetch command will grab all of the latest commits from the Save Queue master branch. Don’t worry,
+The fetch command will grab all of the latest commits from the Save Queue develop branch. Don’t worry,
  it doesn’t alter your working repository in a harmful way. The track part of the command will tell git that this
- branch should track with the remote version of the upstream master. This is another way of saying that the branch
+ branch should track with the remote version of the upstream develop. This is another way of saying that the branch
  should be based on a clean copy of the latest official source code (without any of your unrelated local changes.)
 
 You can then do work locally on this topic branch and push it up to your Github fork when you are done. So in our
